@@ -1,0 +1,23 @@
+{
+  "skill_name": "cli",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a Go Cobra CLI for managing deployments. Add a `config` command that defaults to showing the current config, plus `get`, `set`, `unset`, `edit`, and `path`. It should support `--json`, redact secrets in `config show`, and print helpful hints when values are inferred.",
+      "expected_output": "Uses the CLI skill, adds a config command hierarchy with the requested subcommands and conventions, keeps output and scriptability concerns in mind, and treats secrets safely.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "My Python Typer app has a bunch of commands but the help is weak. Improve it so commands show useful examples, one short documented alias where appropriate, hidden compatibility aliases, and better hints for missing options. Also make the root command support `--version`, `--verbose`, `--quiet`, and `--no-color` cleanly.",
+      "expected_output": "Uses the CLI skill, recommends or implements a larger Typer structure with centralized examples and aliases, polished help, and consistent root-level behavior.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Design an `explain` command for our internal CLI so agents can understand it without scraping `--help`. I want schema-like output in JSON and TOML, with commands, aliases, arguments, options, config keys, interactive behavior, and whether commands mutate state.",
+      "expected_output": "Uses the CLI skill, distinguishes human help from agent-facing explain output, proposes a stable explain schema, and treats it as a versioned machine-readable contract.",
+      "files": []
+    }
+  ]
+}
