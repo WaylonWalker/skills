@@ -19,7 +19,7 @@ var removeCmd = &cobra.Command{
 	Short:   "Remove a skill from the current project or globally",
 	Long: `Remove a skill by deleting symlinks from tool-specific directories.
 
-If the installed file is not a symlink, confirmation is required.
+If the installed directory is not a symlink, confirmation is required.
 Use -f to force removal without confirmation.`,
 	Example: `  skills remove                Remove a project skill (pick from installed)
   skills remove -g             Remove a global skill
@@ -29,10 +29,22 @@ Use -f to force removal without confirmation.`,
 }
 
 func init() {
+	removeCmd.Flags().BoolP("global", "g", false, "operate on global tool directories")
+	removeCmd.Flags().BoolP("force", "f", false, "remove without confirmation")
 	rootCmd.AddCommand(removeCmd)
 }
 
 func runRemove(cmd *cobra.Command, args []string) error {
+	global, err := cmd.Flags().GetBool("global")
+	if err != nil {
+		return err
+	}
+
+	force, err := cmd.Flags().GetBool("force")
+	if err != nil {
+		return err
+	}
+
 	cfg := config.Load()
 
 	installed, err := skills.Installed(cfg, global)
@@ -76,7 +88,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		picked, err := ui.Pick(available, "Select a skill to remove:")
+		picked, err := ui.Pick(available, "Select a skill to remove:", nil)
 		if err != nil {
 			return err
 		}
@@ -95,8 +107,11 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Warn if the file is not a symlink and force is not set.
+	// Warn if the installed directory is not a symlink and force is not set.
 	if !selected.IsSymlink && !force {
+		if !ui.IsInteractiveTerminal() {
+			return fmt.Errorf("%s is not a symlink; rerun with --force to remove it non-interactively", selected.Path)
+		}
 		fmt.Fprintf(os.Stderr, "%s %s is not a symlink.\n", theme.Warning.Render("warning:"), selected.Path)
 		fmt.Fprint(os.Stderr, "Remove anyway? [y/N] ")
 		var answer string

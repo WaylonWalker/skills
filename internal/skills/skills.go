@@ -15,6 +15,7 @@ import (
 type Skill struct {
 	Name        string // skill name (directory name or filename without .md)
 	Path        string // full path to the source SKILL.md or .md file
+	DirPath     string // full path to the source skill directory when available
 	Description string // from frontmatter or first non-header line
 	Content     string // full file content
 	Source      string // which skills directory it came from
@@ -79,6 +80,7 @@ func Discover(cfg *config.Config) ([]Skill, error) {
 				result = append(result, Skill{
 					Name:        name,
 					Path:        skillFile,
+					DirPath:     filepath.Join(dir, name),
 					Description: desc,
 					Content:     string(content),
 					Source:      dir,
@@ -178,7 +180,12 @@ func Install(cfg *config.Config, skill Skill, global bool) ([]InstallResult, err
 			}
 		}
 
-		if err := os.Symlink(skill.Path, dest); err != nil {
+		target := skill.Path
+		if skill.DirPath != "" {
+			target = skill.DirPath
+		}
+
+		if err := os.Symlink(target, dest); err != nil {
 			results = append(results, InstallResult{
 				Tool: tool.Name,
 				Err:  err,
@@ -196,7 +203,7 @@ func Install(cfg *config.Config, skill Skill, global bool) ([]InstallResult, err
 }
 
 // Installed returns all skills currently installed for the given scope.
-// All tools use the uniform <dir>/<name>/SKILL.md pattern.
+// All tools use the uniform <dir>/<name>/ pattern.
 func Installed(cfg *config.Config, global bool) ([]InstalledSkill, error) {
 	if global && !tools.IsConfigured(cfg.Tools) {
 		return nil, fmt.Errorf("global listing requires explicit tool configuration\nSet SKILLS_TOOL to specify which tools to target, e.g.:\n  export SKILLS_TOOL=\"claude-code,opencode\"")
@@ -234,17 +241,30 @@ func Installed(cfg *config.Config, global bool) ([]InstalledSkill, error) {
 		}
 
 		for _, e := range entries {
-			if !e.IsDir() {
+			info, err := os.Lstat(filepath.Join(dir, e.Name()))
+			if err != nil {
 				continue
 			}
-			skillFile := filepath.Join(dir, e.Name(), "SKILL.md")
-			info, err := os.Lstat(skillFile)
-			if err != nil {
+			if !e.IsDir() && info.Mode()&os.ModeSymlink == 0 {
+				continue
+			}
+			skillPath := filepath.Join(dir, e.Name())
+			resolvedInfo := info
+			if info.Mode()&os.ModeSymlink != 0 {
+				resolvedInfo, err = os.Stat(skillPath)
+				if err != nil {
+					continue
+				}
+			}
+			if !resolvedInfo.IsDir() {
+				continue
+			}
+			if _, err := os.Stat(filepath.Join(skillPath, "SKILL.md")); err != nil {
 				continue
 			}
 			result = append(result, InstalledSkill{
 				Name:      e.Name(),
-				Path:      skillFile,
+				Path:      skillPath,
 				Tool:      tool.Name,
 				IsSymlink: info.Mode()&os.ModeSymlink != 0,
 			})
@@ -255,7 +275,7 @@ func Installed(cfg *config.Config, global bool) ([]InstalledSkill, error) {
 }
 
 // CleanupEmptyParent removes the parent directory if it is empty.
-// This is useful for tools like opencode that use subdirectories per skill.
+// This is useful after removing a per-skill directory entry.
 func CleanupEmptyParent(path string) {
 	dir := filepath.Dir(path)
 	entries, err := os.ReadDir(dir)

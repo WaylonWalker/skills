@@ -12,7 +12,7 @@ func TestProjectPath(t *testing.T) {
 	}
 
 	got := tool.ProjectPath("/my/project", "go-rules")
-	expected := "/my/project/.claude/skills/go-rules/SKILL.md"
+	expected := "/my/project/.claude/skills/go-rules"
 	if got != expected {
 		t.Errorf("expected %q, got %q", expected, got)
 	}
@@ -39,7 +39,7 @@ func TestGlobalPath(t *testing.T) {
 	}
 
 	got := tool.GlobalPath("go-rules")
-	expected := "/home/user/.config/opencode/skills/go-rules/SKILL.md"
+	expected := "/home/user/.config/opencode/skills/go-rules"
 	if got != expected {
 		t.Errorf("expected %q, got %q", expected, got)
 	}
@@ -59,18 +59,18 @@ func TestGlobalPathEmpty(t *testing.T) {
 }
 
 func TestAllPathsAreSubdirs(t *testing.T) {
-	// Every tool should produce paths ending in <name>/SKILL.md.
+	// Every tool should produce paths ending in <name>/.
 	for _, tool := range All {
 		if tool.ProjectDir != "" {
 			p := tool.ProjectPath("/root", "test-skill")
-			if !strings.HasSuffix(p, "test-skill/SKILL.md") {
-				t.Errorf("%s: ProjectPath should end with test-skill/SKILL.md, got %q", tool.Name, p)
+			if !strings.HasSuffix(p, "test-skill") {
+				t.Errorf("%s: ProjectPath should end with test-skill, got %q", tool.Name, p)
 			}
 		}
 		if tool.GlobalDir != "" {
 			g := tool.GlobalPath("test-skill")
-			if !strings.HasSuffix(g, "test-skill/SKILL.md") {
-				t.Errorf("%s: GlobalPath should end with test-skill/SKILL.md, got %q", tool.Name, g)
+			if !strings.HasSuffix(g, "test-skill") {
+				t.Errorf("%s: GlobalPath should end with test-skill, got %q", tool.Name, g)
 			}
 		}
 	}

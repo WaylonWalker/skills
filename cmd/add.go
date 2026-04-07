@@ -13,8 +13,9 @@ import (
 )
 
 var addCmd = &cobra.Command{
-	Use:   "add [skill-name]",
-	Short: "Create a new skill from a template",
+	Use:     "add [skill-name]",
+	Aliases: []string{"new", "create"},
+	Short:   "Create a new skill from a template",
 	Long: `Create a new skill directory with a SKILL.md file.
 
 The skill follows the agentskills.io specification: a directory containing

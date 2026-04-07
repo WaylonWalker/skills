@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/WaylonWalker/skills/internal/skills"
@@ -27,18 +26,18 @@ type previewModel struct {
 
 // Preview opens an interactive split-pane browser with a skill list on the
 // left and a rendered markdown preview on the right.
-func Preview(available []skills.Skill, global bool) error {
-	if fi, _ := os.Stdin.Stat(); fi != nil && fi.Mode()&os.ModeCharDevice == 0 {
+func Preview(available []skills.Skill, global bool, installed map[string]bool) error {
+	if !IsInteractiveTerminal() {
 		// Non-interactive: print a simple list instead.
 		for _, s := range available {
-			fmt.Printf("%-30s %s\n", s.Name, s.Description)
+			fmt.Printf("%-30s %s\n", s.Name, skillItem{skill: s, installed: installed[s.Name]}.Description())
 		}
 		return nil
 	}
 
 	items := make([]list.Item, len(available))
 	for i, s := range available {
-		items[i] = skillItem{skill: s}
+		items[i] = skillItem{skill: s, installed: installed[s.Name]}
 	}
 
 	delegate := list.NewDefaultDelegate()

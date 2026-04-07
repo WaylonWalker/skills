@@ -13,8 +13,9 @@ import (
 )
 
 var useCmd = &cobra.Command{
-	Use:   "use [skill-name]",
-	Short: "Apply a skill to the current project or globally",
+	Use:     "use [skill-name]",
+	Aliases: []string{"apply"},
+	Short:   "Apply a skill to the current project or globally",
 	Long: `Apply a skill by creating symlinks in tool-specific directories.
 
 Without a skill name, opens a fuzzy picker to select from available skills.
@@ -28,16 +29,24 @@ Use -g to apply the skill globally instead of to the current project.`,
 }
 
 func init() {
+	useCmd.Flags().BoolP("global", "g", false, "operate on global tool directories")
 	rootCmd.AddCommand(useCmd)
 }
 
 func runUse(cmd *cobra.Command, args []string) error {
+	global, err := cmd.Flags().GetBool("global")
+	if err != nil {
+		return err
+	}
+
 	cfg := config.Load()
 
 	available, err := skills.Discover(cfg)
 	if err != nil {
 		return fmt.Errorf("discovering skills: %w", err)
 	}
+
+	installed := installedSkillNames(cfg, global)
 
 	if len(available) == 0 {
 		fmt.Fprintln(os.Stderr, theme.Warning.Render("No skills found in: ")+cfg.SkillsDirDisplay())
@@ -59,7 +68,7 @@ func runUse(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("skill %q not found\nAvailable: %s", name, skillNames(available))
 		}
 	} else {
-		picked, err := ui.Pick(available, "Select a skill to apply:")
+		picked, err := ui.Pick(available, "Select a skill to apply:", installed)
 		if err != nil {
 			return err
 		}
@@ -92,6 +101,19 @@ func runUse(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func installedSkillNames(cfg *config.Config, global bool) map[string]bool {
+	installed, err := skills.Installed(cfg, global)
+	if err != nil {
+		return map[string]bool{}
+	}
+
+	names := make(map[string]bool, len(installed))
+	for _, skill := range installed {
+		names[skill.Name] = true
+	}
+	return names
 }
 
 func skillNames(ss []skills.Skill) string {

@@ -6,6 +6,8 @@ This is not a public registry or shared marketplace -- it is a personal repo
 for skills you create, copy, and vet yourself. You use the `skills` CLI to
 apply them to your projects or globally across your machine.
 
+With no subcommand, `skills` behaves like `skills use`.
+
 Skills follow the [agentskills.io](https://agentskills.io) specification:
 each skill is a directory containing a `SKILL.md` file with YAML frontmatter.
 
@@ -26,6 +28,9 @@ just build
 ## Quick Start
 
 ```sh
+# Apply a skill to the current project
+skills
+
 # Add a new skill to your collection
 skills add
 
@@ -43,6 +48,9 @@ skills remove
 
 # Show current configuration
 skills config
+
+# Show the installed CLI version
+skills version
 ```
 
 ## Configuration
@@ -87,7 +95,7 @@ Global installs (`-g`) require explicit tool configuration -- the CLI will
 refuse to install globally without `SKILLS_TOOL` set.
 
 All tools follow the agentskills.io specification and install skills as
-`<dir>/<name>/SKILL.md` in both project and global scopes.
+`<dir>/<name>/` symlinks in both project and global scopes.
 
 The full agent table is derived from [vercel-labs/skills](https://github.com/vercel-labs/skills).
 
@@ -165,6 +173,16 @@ compatibility.
 
 ## Commands
 
+### `skills [name]`
+
+With no subcommand, `skills` behaves like `skills use`.
+
+```sh
+skills                     # pick from available skills
+skills go-conventions      # apply a specific skill
+skills apply go-conventions # alias for `skills use go-conventions`
+```
+
 ### `skills use [name]`
 
 Apply a skill to the current project by creating symlinks in the
@@ -175,6 +193,7 @@ skills use                     # pick from available skills
 skills use go-conventions      # apply a specific skill
 skills use -g                  # pick and apply globally
 skills use -g go-conventions   # apply a specific skill globally
+skills apply go-conventions    # alias for use
 ```
 
 ### `skills list`
@@ -193,11 +212,13 @@ Create a new skill from a template (creates `<name>/SKILL.md` with frontmatter).
 ```sh
 skills add                     # prompted for name
 skills add my-new-skill        # create with given name
+skills new my-new-skill        # alias for add
+skills create my-new-skill     # alias for add
 ```
 
 ### `skills remove [name]`
 
-Remove a skill from the current project. If the installed file is not a
+Remove a skill from the current project. If the installed directory is not a
 symlink, confirmation is required (or use `-f`).
 
 ```sh
@@ -213,6 +234,25 @@ Show current configuration (skills directories, tool filter, etc.).
 ```sh
 skills config                  # show configuration
 skills config show             # same as above
+skills config view             # alias for show
+```
+
+### `skills supported`
+
+Show the supported agent/tool paths.
+
+```sh
+skills supported               # show supported tools and install paths
+skills tools                   # alias for supported
+skills agents                  # alias for supported
+```
+
+### `skills version`
+
+Print the installed CLI version.
+
+```sh
+skills version
 ```
 
 ## Flags
@@ -221,7 +261,7 @@ skills config show             # same as above
 |------|-------------|
 | `-g, --global` | Operate on global tool directories instead of project |
 | `-f, --force` | Force remove even if the file is not a symlink |
-| `--version` | Print version |
+| `-v, --version` | Print version |
 | `-h, --help` | Print help |
 
 ## Environment Variables

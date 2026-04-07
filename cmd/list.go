@@ -25,10 +25,16 @@ Use -g to show global installation status instead of project status.`,
 }
 
 func init() {
+	listCmd.Flags().BoolP("global", "g", false, "show global installation status")
 	rootCmd.AddCommand(listCmd)
 }
 
 func runList(cmd *cobra.Command, args []string) error {
+	global, err := cmd.Flags().GetBool("global")
+	if err != nil {
+		return err
+	}
+
 	cfg := config.Load()
 
 	available, err := skills.Discover(cfg)
@@ -43,5 +49,5 @@ func runList(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	return ui.Preview(available, global)
+	return ui.Preview(available, global, installedSkillNames(cfg, global))
 }

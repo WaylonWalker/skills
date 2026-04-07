@@ -2,7 +2,8 @@
 // expected file paths for skill files.
 //
 // All tools follow the agentskills.io specification: skills are installed as
-// <dir>/<name>/SKILL.md in both project and global scopes.
+// <dir>/<name>/, with the directory containing SKILL.md and any optional
+// companion files.
 //
 // The agent table is derived from https://github.com/vercel-labs/skills.
 package tools
@@ -14,7 +15,7 @@ import (
 
 // Tool describes where a particular AI coding assistant expects its
 // skill files to be located. All tools use the uniform pattern
-// <dir>/<name>/SKILL.md for both project and global scopes.
+// <dir>/<name>/ for both project and global scopes.
 type Tool struct {
 	Name       string // tool identifier (used with --agent flag / SKILLS_TOOL)
 	ProjectDir string // relative to project root (empty = not supported)
@@ -27,7 +28,7 @@ func (t Tool) ProjectPath(projectRoot, skillName string) string {
 	if t.ProjectDir == "" {
 		return ""
 	}
-	return filepath.Join(projectRoot, t.ProjectDir, skillName, "SKILL.md")
+	return filepath.Join(projectRoot, t.ProjectDir, skillName)
 }
 
 // GlobalPath returns the full path where a skill should be installed globally.
@@ -36,7 +37,7 @@ func (t Tool) GlobalPath(skillName string) string {
 	if t.GlobalDir == "" {
 		return ""
 	}
-	return filepath.Join(t.GlobalDir, skillName, "SKILL.md")
+	return filepath.Join(t.GlobalDir, skillName)
 }
 
 // All is the registry of supported tools.

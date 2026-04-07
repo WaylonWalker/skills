@@ -12,6 +12,7 @@ func TestSkillItemInterface(t *testing.T) {
 		Name:        "go-rules",
 		Description: "Go conventions and best practices",
 		Path:        "/home/user/.config/skills/go-rules.md",
+		Source:      "/home/user/git/public-skills",
 		Content:     "# go-rules\n\nGo conventions.\n",
 	}
 
@@ -21,8 +22,8 @@ func TestSkillItemInterface(t *testing.T) {
 		t.Errorf("Title() = %q, want %q", got, "go-rules")
 	}
 
-	if got := item.Description(); got != "Go conventions and best practices" {
-		t.Errorf("Description() = %q, want %q", got, "Go conventions and best practices")
+	if got := item.Description(); got != "Go conventions and best practices [public-skills]" {
+		t.Errorf("Description() = %q, want %q", got, "Go conventions and best practices [public-skills]")
 	}
 
 	fv := item.FilterValue()
@@ -31,6 +32,34 @@ func TestSkillItemInterface(t *testing.T) {
 	}
 	if !strings.Contains(fv, "Go conventions") {
 		t.Errorf("FilterValue() should contain description, got %q", fv)
+	}
+	if !strings.Contains(fv, "public-skills") {
+		t.Errorf("FilterValue() should contain source, got %q", fv)
+	}
+}
+
+func TestSkillItemTitleMarksInstalled(t *testing.T) {
+	item := skillItem{
+		skill: skills.Skill{
+			Name:        "go-rules",
+			Description: "Go conventions and best practices",
+			Source:      "/home/user/git/public-skills",
+		},
+		installed: true,
+	}
+
+	if got := item.Title(); got != "go-rules (installed)" {
+		t.Errorf("Title() = %q, want %q", got, "go-rules (installed)")
+	}
+	if got := item.Description(); got != "Go conventions and best practices [public-skills]" {
+		t.Errorf("Description() = %q, want %q", got, "Go conventions and best practices [public-skills]")
+	}
+}
+
+func TestSkillItemDescriptionWithOnlySource(t *testing.T) {
+	item := skillItem{skill: skills.Skill{Source: "/tmp/private-skills"}}
+	if got := item.Description(); got != "private-skills" {
+		t.Errorf("Description() = %q, want %q", got, "private-skills")
 	}
 }
 

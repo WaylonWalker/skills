@@ -2,7 +2,8 @@ package ui
 
 import (
 	"fmt"
-	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/WaylonWalker/skills/internal/skills"
 	"github.com/WaylonWalker/skills/internal/theme"
@@ -13,12 +14,50 @@ import (
 
 // skillItem implements list.Item for the bubbles list component.
 type skillItem struct {
-	skill skills.Skill
+	skill     skills.Skill
+	installed bool
 }
 
-func (i skillItem) Title() string       { return i.skill.Name }
-func (i skillItem) Description() string { return i.skill.Description }
-func (i skillItem) FilterValue() string { return i.skill.Name + " " + i.skill.Description }
+func (i skillItem) Title() string {
+	if i.installed {
+		return i.skill.Name + " (installed)"
+	}
+	return i.skill.Name
+}
+
+func (i skillItem) Description() string {
+	parts := make([]string, 0, 2)
+	if i.skill.Description != "" {
+		parts = append(parts, i.skill.Description)
+	}
+	source := skillSourceLabel(i.skill.Source)
+	if source != "" && i.skill.Description != "" {
+		parts = append(parts, "["+source+"]")
+	} else if source != "" {
+		parts = append(parts, source)
+	}
+	return strings.Join(parts, " ")
+}
+func (i skillItem) FilterValue() string {
+	parts := []string{i.skill.Name, i.skill.Description, i.skill.Source}
+	filtered := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part != "" {
+			filtered = append(filtered, part)
+		}
+	}
+	if len(filtered) == 0 {
+		return " "
+	}
+	return strings.Join(filtered, " ")
+}
+
+func skillSourceLabel(source string) string {
+	if source == "" {
+		return ""
+	}
+	return filepath.Base(source)
+}
 
 type pickerModel struct {
 	list     list.Model
@@ -28,14 +67,14 @@ type pickerModel struct {
 
 // Pick opens an interactive fuzzy picker and returns the selected skill.
 // Returns nil if the user cancels.
-func Pick(available []skills.Skill, title string) (*skills.Skill, error) {
-	if fi, _ := os.Stdin.Stat(); fi != nil && fi.Mode()&os.ModeCharDevice == 0 {
+func Pick(available []skills.Skill, title string, installed map[string]bool) (*skills.Skill, error) {
+	if !IsInteractiveTerminal() {
 		return nil, fmt.Errorf("interactive picker requires a terminal; specify a skill name as an argument")
 	}
 
 	items := make([]list.Item, len(available))
 	for i, s := range available {
-		items[i] = skillItem{skill: s}
+		items[i] = skillItem{skill: s, installed: installed[s.Name]}
 	}
 
 	delegate := list.NewDefaultDelegate()

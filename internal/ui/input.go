@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/WaylonWalker/skills/internal/theme"
@@ -23,7 +22,7 @@ type inputModel struct {
 // Input opens an interactive text input and returns the entered value.
 // Returns empty string if the user cancels (esc/ctrl+c).
 func Input(title string, placeholder string, validate func(string) error) (string, error) {
-	if fi, _ := os.Stdin.Stat(); fi != nil && fi.Mode()&os.ModeCharDevice == 0 {
+	if !IsInteractiveTerminal() {
 		return "", fmt.Errorf("interactive input requires a terminal; specify a value as an argument")
 	}
 

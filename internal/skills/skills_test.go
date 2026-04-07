@@ -319,8 +319,8 @@ func TestInstallAndCleanup(t *testing.T) {
 		t.Fatalf("install was skipped: %s", r.Reason)
 	}
 
-	// Verify the symlink was created (all tools use <dir>/<name>/SKILL.md).
-	expectedDest := filepath.Join(projectDir, ".claude", "skills", "test-skill", "SKILL.md")
+	// Verify the symlinked skill directory was created.
+	expectedDest := filepath.Join(projectDir, ".claude", "skills", "test-skill")
 	if r.Dest != expectedDest {
 		t.Errorf("expected dest %q, got %q", expectedDest, r.Dest)
 	}
@@ -338,8 +338,8 @@ func TestInstallAndCleanup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if target != skillPath {
-		t.Errorf("expected target %q, got %q", skillPath, target)
+	if target != filepath.Join(skillDir, "test-skill") {
+		t.Errorf("expected target %q, got %q", filepath.Join(skillDir, "test-skill"), target)
 	}
 
 	// Verify Installed finds it.
@@ -361,7 +361,7 @@ func TestInstallAndCleanup(t *testing.T) {
 	os.Remove(r.Dest)
 	CleanupEmptyParent(r.Dest)
 
-	// The skill subdir should be cleaned up since it's empty.
+	// The skill entry should be cleaned up since it's gone.
 	if _, err := os.Stat(filepath.Join(projectDir, ".claude", "skills", "test-skill")); err == nil {
 		t.Error("expected skill subdir to be cleaned up")
 	}
@@ -406,8 +406,7 @@ func TestInstallDefaultToolProject(t *testing.T) {
 	projectDir := t.TempDir()
 
 	os.MkdirAll(filepath.Join(skillDir, "test-skill"), 0o755)
-	skillPath := filepath.Join(skillDir, "test-skill", "SKILL.md")
-	os.WriteFile(skillPath, []byte("---\nname: test-skill\ndescription: Test skill\n---\n# test-skill\n"), 0o644)
+	os.WriteFile(filepath.Join(skillDir, "test-skill", "SKILL.md"), []byte("---\nname: test-skill\ndescription: Test skill\n---\n# test-skill\n"), 0o644)
 
 	os.MkdirAll(filepath.Join(projectDir, ".git"), 0o755)
 
@@ -442,7 +441,7 @@ func TestInstallDefaultToolProject(t *testing.T) {
 		t.Errorf("expected tool 'local', got %q", r.Tool)
 	}
 
-	expectedDest := filepath.Join(projectDir, ".agents", "skills", "test-skill", "SKILL.md")
+	expectedDest := filepath.Join(projectDir, ".agents", "skills", "test-skill")
 	if r.Dest != expectedDest {
 		t.Errorf("expected dest %q, got %q", expectedDest, r.Dest)
 	}
