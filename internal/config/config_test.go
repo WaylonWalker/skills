@@ -6,6 +6,20 @@ import (
 	"testing"
 )
 
+func mustMkdirAll(t *testing.T, path string) {
+	t.Helper()
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		t.Fatalf("mkdir %s: %v", path, err)
+	}
+}
+
+func mustChdir(t *testing.T, dir string) {
+	t.Helper()
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir %s: %v", dir, err)
+	}
+}
+
 func TestLoadDefaults(t *testing.T) {
 	// Ensure env vars are cleared.
 	t.Setenv("SKILLS_DIR", "")
@@ -78,13 +92,13 @@ func TestFindProjectRoot(t *testing.T) {
 	// Create a temp dir with a .git marker.
 	dir := t.TempDir()
 	sub := filepath.Join(dir, "a", "b")
-	os.MkdirAll(sub, 0o755)
-	os.MkdirAll(filepath.Join(dir, ".git"), 0o755)
+	mustMkdirAll(t, sub)
+	mustMkdirAll(t, filepath.Join(dir, ".git"))
 
 	// Change to the subdirectory.
 	orig, _ := os.Getwd()
-	defer os.Chdir(orig)
-	os.Chdir(sub)
+	defer mustChdir(t, orig)
+	mustChdir(t, sub)
 
 	root, err := FindProjectRoot()
 	if err != nil {

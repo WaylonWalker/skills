@@ -8,21 +8,42 @@ import (
 	"github.com/WaylonWalker/skills/internal/config"
 )
 
+func mustMkdirAll(t *testing.T, path string) {
+	t.Helper()
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		t.Fatalf("mkdir %s: %v", path, err)
+	}
+}
+
+func mustWriteFile(t *testing.T, path string, data string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatalf("write %s: %v", path, err)
+	}
+}
+
+func mustChdir(t *testing.T, dir string) {
+	t.Helper()
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir %s: %v", dir, err)
+	}
+}
+
 func TestDiscoverSubdir(t *testing.T) {
 	dir := t.TempDir()
 
 	// Create skills in <name>/SKILL.md format.
-	os.MkdirAll(filepath.Join(dir, "go-rules"), 0o755)
-	os.WriteFile(filepath.Join(dir, "go-rules", "SKILL.md"), []byte("---\nname: go-rules\ndescription: Go conventions\n---\n# go-rules\n\nGo conventions.\n"), 0o644)
+	mustMkdirAll(t, filepath.Join(dir, "go-rules"))
+	mustWriteFile(t, filepath.Join(dir, "go-rules", "SKILL.md"), "---\nname: go-rules\ndescription: Go conventions\n---\n# go-rules\n\nGo conventions.\n")
 
-	os.MkdirAll(filepath.Join(dir, "python"), 0o755)
-	os.WriteFile(filepath.Join(dir, "python", "SKILL.md"), []byte("---\nname: python\ndescription: Python rules\n---\n# python\n\nPython rules.\n"), 0o644)
+	mustMkdirAll(t, filepath.Join(dir, "python"))
+	mustWriteFile(t, filepath.Join(dir, "python", "SKILL.md"), "---\nname: python\ndescription: Python rules\n---\n# python\n\nPython rules.\n")
 
 	// This directory has no SKILL.md, should be ignored.
-	os.MkdirAll(filepath.Join(dir, "empty-dir"), 0o755)
+	mustMkdirAll(t, filepath.Join(dir, "empty-dir"))
 
 	// Non-md file, should be ignored.
-	os.WriteFile(filepath.Join(dir, "not-a-skill.txt"), []byte("ignored"), 0o644)
+	mustWriteFile(t, filepath.Join(dir, "not-a-skill.txt"), "ignored")
 
 	cfg := &config.Config{SkillsDirs: []string{dir}}
 	skills, err := Discover(cfg)
@@ -51,9 +72,9 @@ func TestDiscoverFlatFiles(t *testing.T) {
 	dir := t.TempDir()
 
 	// Legacy flat file format.
-	os.WriteFile(filepath.Join(dir, "go-rules.md"), []byte("# go-rules\n\nGo conventions.\n"), 0o644)
-	os.WriteFile(filepath.Join(dir, "python.md"), []byte("# python\n\nPython rules.\n"), 0o644)
-	os.WriteFile(filepath.Join(dir, "not-a-skill.txt"), []byte("ignored"), 0o644)
+	mustWriteFile(t, filepath.Join(dir, "go-rules.md"), "# go-rules\n\nGo conventions.\n")
+	mustWriteFile(t, filepath.Join(dir, "python.md"), "# python\n\nPython rules.\n")
+	mustWriteFile(t, filepath.Join(dir, "not-a-skill.txt"), "ignored")
 
 	cfg := &config.Config{SkillsDirs: []string{dir}}
 	skills, err := Discover(cfg)
@@ -82,9 +103,9 @@ func TestDiscoverMixed(t *testing.T) {
 	dir := t.TempDir()
 
 	// Mix of subdir and flat file.
-	os.MkdirAll(filepath.Join(dir, "dir-skill"), 0o755)
-	os.WriteFile(filepath.Join(dir, "dir-skill", "SKILL.md"), []byte("---\nname: dir-skill\ndescription: From directory\n---\n# dir-skill\n"), 0o644)
-	os.WriteFile(filepath.Join(dir, "flat-skill.md"), []byte("# flat-skill\n\nFlat file.\n"), 0o644)
+	mustMkdirAll(t, filepath.Join(dir, "dir-skill"))
+	mustWriteFile(t, filepath.Join(dir, "dir-skill", "SKILL.md"), "---\nname: dir-skill\ndescription: From directory\n---\n# dir-skill\n")
+	mustWriteFile(t, filepath.Join(dir, "flat-skill.md"), "# flat-skill\n\nFlat file.\n")
 
 	cfg := &config.Config{SkillsDirs: []string{dir}}
 	skills, err := Discover(cfg)
@@ -113,14 +134,14 @@ func TestDiscoverPrecedence(t *testing.T) {
 	dir1 := t.TempDir()
 	dir2 := t.TempDir()
 
-	os.MkdirAll(filepath.Join(dir1, "shared"), 0o755)
-	os.WriteFile(filepath.Join(dir1, "shared", "SKILL.md"), []byte("---\nname: shared\ndescription: From dir1\n---\n# shared\n\nFrom dir1.\n"), 0o644)
+	mustMkdirAll(t, filepath.Join(dir1, "shared"))
+	mustWriteFile(t, filepath.Join(dir1, "shared", "SKILL.md"), "---\nname: shared\ndescription: From dir1\n---\n# shared\n\nFrom dir1.\n")
 
-	os.MkdirAll(filepath.Join(dir2, "shared"), 0o755)
-	os.WriteFile(filepath.Join(dir2, "shared", "SKILL.md"), []byte("---\nname: shared\ndescription: From dir2\n---\n# shared\n\nFrom dir2.\n"), 0o644)
+	mustMkdirAll(t, filepath.Join(dir2, "shared"))
+	mustWriteFile(t, filepath.Join(dir2, "shared", "SKILL.md"), "---\nname: shared\ndescription: From dir2\n---\n# shared\n\nFrom dir2.\n")
 
-	os.MkdirAll(filepath.Join(dir2, "unique"), 0o755)
-	os.WriteFile(filepath.Join(dir2, "unique", "SKILL.md"), []byte("---\nname: unique\ndescription: Only in dir2\n---\n# unique\n\nOnly in dir2.\n"), 0o644)
+	mustMkdirAll(t, filepath.Join(dir2, "unique"))
+	mustWriteFile(t, filepath.Join(dir2, "unique", "SKILL.md"), "---\nname: unique\ndescription: Only in dir2\n---\n# unique\n\nOnly in dir2.\n")
 
 	cfg := &config.Config{SkillsDirs: []string{dir1, dir2}}
 	skills, err := Discover(cfg)
@@ -253,8 +274,8 @@ func TestExtractDescription(t *testing.T) {
 func TestDiscoverFrontmatterDescription(t *testing.T) {
 	dir := t.TempDir()
 
-	os.MkdirAll(filepath.Join(dir, "with-frontmatter"), 0o755)
-	os.WriteFile(filepath.Join(dir, "with-frontmatter", "SKILL.md"), []byte("---\nname: with-frontmatter\ndescription: Description from frontmatter\n---\n# with-frontmatter\n\nBody text here.\n"), 0o644)
+	mustMkdirAll(t, filepath.Join(dir, "with-frontmatter"))
+	mustWriteFile(t, filepath.Join(dir, "with-frontmatter", "SKILL.md"), "---\nname: with-frontmatter\ndescription: Description from frontmatter\n---\n# with-frontmatter\n\nBody text here.\n")
 
 	cfg := &config.Config{SkillsDirs: []string{dir}}
 	skills, err := Discover(cfg)
@@ -276,17 +297,17 @@ func TestInstallAndCleanup(t *testing.T) {
 	projectDir := t.TempDir()
 
 	// Create a skill in directory format.
-	os.MkdirAll(filepath.Join(skillDir, "test-skill"), 0o755)
+	mustMkdirAll(t, filepath.Join(skillDir, "test-skill"))
 	skillPath := filepath.Join(skillDir, "test-skill", "SKILL.md")
-	os.WriteFile(skillPath, []byte("---\nname: test-skill\ndescription: Test skill\n---\n# test-skill\n\nTest skill.\n"), 0o644)
+	mustWriteFile(t, skillPath, "---\nname: test-skill\ndescription: Test skill\n---\n# test-skill\n\nTest skill.\n")
 
 	// Create a .git marker so FindProjectRoot works.
-	os.MkdirAll(filepath.Join(projectDir, ".git"), 0o755)
+	mustMkdirAll(t, filepath.Join(projectDir, ".git"))
 
 	// Save and restore working directory.
 	orig, _ := os.Getwd()
-	defer os.Chdir(orig)
-	os.Chdir(projectDir)
+	defer mustChdir(t, orig)
+	mustChdir(t, projectDir)
 
 	cfg := &config.Config{
 		SkillsDirs: []string{skillDir},
@@ -370,8 +391,8 @@ func TestInstallAndCleanup(t *testing.T) {
 func TestInstallGlobalWithoutConfigFails(t *testing.T) {
 	skillDir := t.TempDir()
 
-	os.MkdirAll(filepath.Join(skillDir, "test-skill"), 0o755)
-	os.WriteFile(filepath.Join(skillDir, "test-skill", "SKILL.md"), []byte("---\nname: test-skill\ndescription: Test skill\n---\n# test-skill\n"), 0o644)
+	mustMkdirAll(t, filepath.Join(skillDir, "test-skill"))
+	mustWriteFile(t, filepath.Join(skillDir, "test-skill", "SKILL.md"), "---\nname: test-skill\ndescription: Test skill\n---\n# test-skill\n")
 
 	cfg := &config.Config{
 		SkillsDirs: []string{skillDir},
@@ -405,14 +426,14 @@ func TestInstallDefaultToolProject(t *testing.T) {
 	skillDir := t.TempDir()
 	projectDir := t.TempDir()
 
-	os.MkdirAll(filepath.Join(skillDir, "test-skill"), 0o755)
-	os.WriteFile(filepath.Join(skillDir, "test-skill", "SKILL.md"), []byte("---\nname: test-skill\ndescription: Test skill\n---\n# test-skill\n"), 0o644)
+	mustMkdirAll(t, filepath.Join(skillDir, "test-skill"))
+	mustWriteFile(t, filepath.Join(skillDir, "test-skill", "SKILL.md"), "---\nname: test-skill\ndescription: Test skill\n---\n# test-skill\n")
 
-	os.MkdirAll(filepath.Join(projectDir, ".git"), 0o755)
+	mustMkdirAll(t, filepath.Join(projectDir, ".git"))
 
 	orig, _ := os.Getwd()
-	defer os.Chdir(orig)
-	os.Chdir(projectDir)
+	defer mustChdir(t, orig)
+	mustChdir(t, projectDir)
 
 	cfg := &config.Config{
 		SkillsDirs: []string{skillDir},

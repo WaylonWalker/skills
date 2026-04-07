@@ -11,6 +11,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func mustMkdirAll(t *testing.T, path string) {
+	t.Helper()
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		t.Fatalf("mkdir %s: %v", path, err)
+	}
+}
+
+func mustWriteFile(t *testing.T, path string, data string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatalf("write %s: %v", path, err)
+	}
+}
+
+func mustChdir(t *testing.T, dir string) {
+	t.Helper()
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir %s: %v", dir, err)
+	}
+}
+
 func TestRootCommandStructure(t *testing.T) {
 	if rootCmd.Use != "skills" {
 		t.Errorf("expected root use 'skills', got %q", rootCmd.Use)
@@ -173,8 +194,8 @@ func TestAddDuplicateFails(t *testing.T) {
 	t.Setenv("SKILLS_TOOL", "")
 
 	// Create existing skill directory.
-	os.MkdirAll(filepath.Join(dir, "existing"), 0o755)
-	os.WriteFile(filepath.Join(dir, "existing", "SKILL.md"), []byte("---\nname: existing\ndescription: test\n---\n# existing\n"), 0o644)
+	mustMkdirAll(t, filepath.Join(dir, "existing"))
+	mustWriteFile(t, filepath.Join(dir, "existing", "SKILL.md"), "---\nname: existing\ndescription: test\n---\n# existing\n")
 
 	err := executeArgs([]string{"add", "existing"})
 	// SilenceErrors is true so Execute returns nil, but runAdd returns the error.
@@ -235,8 +256,8 @@ func TestUseUnknownSkillFails(t *testing.T) {
 	t.Setenv("SKILLS_TOOL", "claude-code")
 
 	// Create one skill so discovery works (new dir format).
-	os.MkdirAll(filepath.Join(dir, "real"), 0o755)
-	os.WriteFile(filepath.Join(dir, "real", "SKILL.md"), []byte("---\nname: real\ndescription: A real skill\n---\n# real\n\nA real skill.\n"), 0o644)
+	mustMkdirAll(t, filepath.Join(dir, "real"))
+	mustWriteFile(t, filepath.Join(dir, "real", "SKILL.md"), "---\nname: real\ndescription: A real skill\n---\n# real\n\nA real skill.\n")
 
 	err := runUse(useCmd, []string{"nonexistent"})
 	if err == nil {
@@ -249,16 +270,16 @@ func TestUseInstallsSkill(t *testing.T) {
 	projectDir := t.TempDir()
 
 	// Create skill in new directory format.
-	os.MkdirAll(filepath.Join(skillDir, "test"), 0o755)
-	os.WriteFile(filepath.Join(skillDir, "test", "SKILL.md"), []byte("---\nname: test\ndescription: Test skill\n---\n# test\n\nTest skill.\n"), 0o644)
-	os.MkdirAll(filepath.Join(projectDir, ".git"), 0o755)
+	mustMkdirAll(t, filepath.Join(skillDir, "test"))
+	mustWriteFile(t, filepath.Join(skillDir, "test", "SKILL.md"), "---\nname: test\ndescription: Test skill\n---\n# test\n\nTest skill.\n")
+	mustMkdirAll(t, filepath.Join(projectDir, ".git"))
 
 	t.Setenv("SKILLS_DIR", skillDir)
 	t.Setenv("SKILLS_TOOL", "claude-code")
 
 	orig, _ := os.Getwd()
-	defer os.Chdir(orig)
-	os.Chdir(projectDir)
+	defer mustChdir(t, orig)
+	mustChdir(t, projectDir)
 
 	err := runUse(useCmd, []string{"test"})
 	if err != nil {
@@ -298,16 +319,16 @@ func TestRootDefaultsToUse(t *testing.T) {
 	skillDir := t.TempDir()
 	projectDir := t.TempDir()
 
-	os.MkdirAll(filepath.Join(skillDir, "test"), 0o755)
-	os.WriteFile(filepath.Join(skillDir, "test", "SKILL.md"), []byte("---\nname: test\ndescription: Test skill\n---\n# test\n\nTest skill.\n"), 0o644)
-	os.MkdirAll(filepath.Join(projectDir, ".git"), 0o755)
+	mustMkdirAll(t, filepath.Join(skillDir, "test"))
+	mustWriteFile(t, filepath.Join(skillDir, "test", "SKILL.md"), "---\nname: test\ndescription: Test skill\n---\n# test\n\nTest skill.\n")
+	mustMkdirAll(t, filepath.Join(projectDir, ".git"))
 
 	t.Setenv("SKILLS_DIR", skillDir)
 	t.Setenv("SKILLS_TOOL", "claude-code")
 
 	orig, _ := os.Getwd()
-	defer os.Chdir(orig)
-	os.Chdir(projectDir)
+	defer mustChdir(t, orig)
+	mustChdir(t, projectDir)
 
 	if err := executeArgs([]string{"test"}); err != nil {
 		t.Fatalf("root default use failed: %v", err)
@@ -423,7 +444,7 @@ func TestRemoveNonSymlinkFailsNonInteractivelyWithoutForce(t *testing.T) {
 	t.Setenv("SKILLS_DIR", skillDir)
 	t.Setenv("SKILLS_TOOL", "claude-code")
 
-	os.MkdirAll(filepath.Join(projectDir, ".git"), 0o755)
+	mustMkdirAll(t, filepath.Join(projectDir, ".git"))
 	installedDir := filepath.Join(projectDir, ".claude", "skills", "manual")
 	if err := os.MkdirAll(installedDir, 0o755); err != nil {
 		t.Fatalf("mkdir failed: %v", err)
@@ -433,13 +454,25 @@ func TestRemoveNonSymlinkFailsNonInteractivelyWithoutForce(t *testing.T) {
 	}
 
 	orig, _ := os.Getwd()
-	defer os.Chdir(orig)
-	os.Chdir(projectDir)
+	defer mustChdir(t, orig)
+	mustChdir(t, projectDir)
 
-	removeCmd.Flags().Set("global", "false")
-	removeCmd.Flags().Set("force", "false")
-	defer removeCmd.Flags().Set("global", "false")
-	defer removeCmd.Flags().Set("force", "false")
+	if err := removeCmd.Flags().Set("global", "false"); err != nil {
+		t.Fatalf("set global flag: %v", err)
+	}
+	if err := removeCmd.Flags().Set("force", "false"); err != nil {
+		t.Fatalf("set force flag: %v", err)
+	}
+	defer func() {
+		if err := removeCmd.Flags().Set("global", "false"); err != nil {
+			t.Fatalf("reset global flag: %v", err)
+		}
+	}()
+	defer func() {
+		if err := removeCmd.Flags().Set("force", "false"); err != nil {
+			t.Fatalf("reset force flag: %v", err)
+		}
+	}()
 
 	err := runRemove(removeCmd, []string{"manual"})
 	if err == nil {

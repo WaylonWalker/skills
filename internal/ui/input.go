@@ -16,7 +16,6 @@ type inputModel struct {
 	value     string
 	submitted bool
 	quitting  bool
-	err       error
 }
 
 // Input opens an interactive text input and returns the entered value.

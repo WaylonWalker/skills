@@ -43,11 +43,9 @@ func runConfigShow(cmd *cobra.Command, args []string) error {
 	// Skills directories.
 	fmt.Fprintf(out, "%s\n", theme.Bold.Render("Skills Directories:"))
 	for _, dir := range cfg.SkillsDirs {
-		exists := "  "
+		exists := theme.Warning.Render("! ")
 		if _, err := os.Stat(dir); err == nil {
 			exists = theme.Success.Render("* ")
-		} else {
-			exists = theme.Warning.Render("! ")
 		}
 		fmt.Fprintf(out, "  %s%s\n", exists, dir)
 	}

@@ -115,7 +115,9 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "%s %s is not a symlink.\n", theme.Warning.Render("warning:"), selected.Path)
 		fmt.Fprint(os.Stderr, "Remove anyway? [y/N] ")
 		var answer string
-		fmt.Scanln(&answer)
+		if _, err := fmt.Scanln(&answer); err != nil && err.Error() != "unexpected newline" {
+			return fmt.Errorf("reading confirmation: %w", err)
+		}
 		if !strings.HasPrefix(strings.ToLower(answer), "y") {
 			fmt.Fprintln(os.Stderr, "Cancelled.")
 			return nil
