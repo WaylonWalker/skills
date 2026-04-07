@@ -13,11 +13,25 @@ each skill is a directory containing a `SKILL.md` file with YAML frontmatter.
 
 ## Install
 
+Install the latest GitHub Release with `mise`:
+
+```sh
+mise use -g github:WaylonWalker/skills
+```
+
+Or install the latest GitHub Release with `eget`:
+
+```sh
+eget WaylonWalker/skills --to ~/.local/bin
+```
+
+Or install from source:
+
 ```sh
 go install github.com/WaylonWalker/skills@latest
 ```
 
-Or build from source:
+Or build from source locally:
 
 ```sh
 git clone https://github.com/WaylonWalker/skills.git
