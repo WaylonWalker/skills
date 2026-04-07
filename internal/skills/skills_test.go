@@ -290,7 +290,7 @@ func TestInstallAndCleanup(t *testing.T) {
 
 	cfg := &config.Config{
 		SkillsDirs: []string{skillDir},
-		Tools:      []string{"claude"},
+		Tools:      []string{"claude-code"},
 	}
 
 	available, err := Discover(cfg)
@@ -319,8 +319,8 @@ func TestInstallAndCleanup(t *testing.T) {
 		t.Fatalf("install was skipped: %s", r.Reason)
 	}
 
-	// Verify the symlink was created.
-	expectedDest := filepath.Join(projectDir, ".claude", "rules", "test-skill.md")
+	// Verify the symlink was created (all tools use <dir>/<name>/SKILL.md).
+	expectedDest := filepath.Join(projectDir, ".claude", "skills", "test-skill", "SKILL.md")
 	if r.Dest != expectedDest {
 		t.Errorf("expected dest %q, got %q", expectedDest, r.Dest)
 	}
@@ -361,8 +361,8 @@ func TestInstallAndCleanup(t *testing.T) {
 	os.Remove(r.Dest)
 	CleanupEmptyParent(r.Dest)
 
-	// The rules dir should be cleaned up since it's empty.
-	if _, err := os.Stat(filepath.Join(projectDir, ".claude", "rules")); err == nil {
-		t.Error("expected rules dir to be cleaned up")
+	// The skill subdir should be cleaned up since it's empty.
+	if _, err := os.Stat(filepath.Join(projectDir, ".claude", "skills", "test-skill")); err == nil {
+		t.Error("expected skill subdir to be cleaned up")
 	}
 }

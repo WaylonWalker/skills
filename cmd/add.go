@@ -8,6 +8,7 @@ import (
 
 	"github.com/WaylonWalker/skills/internal/config"
 	"github.com/WaylonWalker/skills/internal/theme"
+	"github.com/WaylonWalker/skills/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -19,9 +20,9 @@ var addCmd = &cobra.Command{
 The skill follows the agentskills.io specification: a directory containing
 a SKILL.md file with YAML frontmatter (name, description).
 
-Without a name, prompts for one interactively. The skill is created
+Without a name, opens an interactive input. The skill is created
 in the first directory listed in SKILLS_DIR.`,
-	Example: `  skills add                  Prompted for a name
+	Example: `  skills add                  Interactive name input
   skills add my-new-skill     Create with the given name`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runAdd,
@@ -39,9 +40,14 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
 		name = args[0]
 	} else {
-		fmt.Fprint(os.Stderr, theme.Info.Render("Skill name: "))
-		fmt.Scanln(&name)
-		name = strings.TrimSpace(name)
+		entered, err := ui.Input("New skill name", "my-new-skill", nil)
+		if err != nil {
+			return err
+		}
+		if entered == "" {
+			return nil // user cancelled
+		}
+		name = entered
 	}
 
 	if name == "" {
@@ -81,6 +87,9 @@ Add your instructions here.
 	}
 
 	fmt.Fprintf(os.Stderr, "%s Created %s\n", theme.Success.Render("*"), skillFile)
+	fmt.Fprintf(os.Stderr, "%s To skip the prompt: %s\n",
+		theme.Subtle.Render("->"),
+		theme.Info.Render(fmt.Sprintf("skills add %s", name)))
 
 	if editor := os.Getenv("EDITOR"); editor != "" {
 		fmt.Fprintf(os.Stderr, "%s Run '%s %s' to edit.\n", theme.Subtle.Render("->"), editor, skillFile)

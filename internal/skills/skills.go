@@ -192,6 +192,7 @@ func Install(cfg *config.Config, skill Skill, global bool) ([]InstallResult, err
 }
 
 // Installed returns all skills currently installed for the given scope.
+// All tools use the uniform <dir>/<name>/SKILL.md pattern.
 func Installed(cfg *config.Config, global bool) ([]InstalledSkill, error) {
 	filtered := tools.Filtered(cfg.Tools)
 	var result []InstalledSkill
@@ -225,33 +226,20 @@ func Installed(cfg *config.Config, global bool) ([]InstalledSkill, error) {
 		}
 
 		for _, e := range entries {
-			if tool.NeedsSubdir && e.IsDir() {
-				subFile := filepath.Join(dir, e.Name(), tool.SubdirFile)
-				info, err := os.Lstat(subFile)
-				if err != nil {
-					continue
-				}
-				result = append(result, InstalledSkill{
-					Name:      e.Name(),
-					Path:      subFile,
-					Tool:      tool.Name,
-					IsSymlink: info.Mode()&os.ModeSymlink != 0,
-				})
-			} else if !e.IsDir() && strings.HasSuffix(e.Name(), ".md") {
-				path := filepath.Join(dir, e.Name())
-				info, err := os.Lstat(path)
-				if err != nil {
-					continue
-				}
-				name := strings.TrimSuffix(e.Name(), ".md")
-				name = strings.TrimSuffix(name, ".instructions")
-				result = append(result, InstalledSkill{
-					Name:      name,
-					Path:      path,
-					Tool:      tool.Name,
-					IsSymlink: info.Mode()&os.ModeSymlink != 0,
-				})
+			if !e.IsDir() {
+				continue
 			}
+			skillFile := filepath.Join(dir, e.Name(), "SKILL.md")
+			info, err := os.Lstat(skillFile)
+			if err != nil {
+				continue
+			}
+			result = append(result, InstalledSkill{
+				Name:      e.Name(),
+				Path:      skillFile,
+				Tool:      tool.Name,
+				IsSymlink: info.Mode()&os.ModeSymlink != 0,
+			})
 		}
 	}
 

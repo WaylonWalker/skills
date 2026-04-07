@@ -69,23 +69,55 @@ Default: `~/.config/skills`
 Set `SKILLS_TOOL` to specify which AI tools to target:
 
 ```sh
-export SKILLS_TOOL="claude,copilot,opencode"
+export SKILLS_TOOL="claude-code,github-copilot,opencode"
 ```
 
-If not set, the CLI targets all detected tools.
+If not set, the CLI targets all 44 supported agents.
 
-Supported tools and where skills are installed:
+All tools follow the agentskills.io specification and install skills as
+`<dir>/<name>/SKILL.md` in both project and global scopes.
 
-| Tool | Project Path | Global Path |
-|------|-------------|-------------|
-| claude | `.claude/rules/<name>.md` | `~/.claude/rules/<name>.md` |
-| copilot | `.github/instructions/<name>.instructions.md` | -- |
-| cursor | `.cursor/rules/<name>.md` | -- |
-| opencode | -- | `~/.config/opencode/skills/<name>/SKILL.md` |
-| windsurf | `.windsurf/rules/<name>.md` | -- |
-| cline | `.clinerules/<name>.md` | `~/Documents/Cline/Rules/<name>.md` |
-| augment | `.augment/rules/<name>.md` | `~/.augment/rules/<name>.md` |
-| roo | `.roo/rules/<name>.md` | `~/.roo/rules/<name>.md` |
+The full agent table is derived from [vercel-labs/skills](https://github.com/vercel-labs/skills).
+
+#### Agents with unique project paths
+
+| Agent | Project Path | Global Path |
+|-------|-------------|-------------|
+| claude-code | `.claude/skills/` | `~/.claude/skills/` |
+| windsurf | `.windsurf/skills/` | `~/.codeium/windsurf/skills/` |
+| roo | `.roo/skills/` | `~/.roo/skills/` |
+| augment | `.augment/skills/` | `~/.augment/skills/` |
+| junie | `.junie/skills/` | `~/.junie/skills/` |
+| cody | `.sourcegraph/skills/` | `~/.sourcegraph/skills/` |
+
+#### Agents using `.agents/skills/` project path (unique global paths)
+
+| Agent | Global Path |
+|-------|-------------|
+| cursor | `~/.cursor/skills/` |
+| github-copilot | `~/.copilot/skills/` |
+| opencode | `~/.config/opencode/skills/` |
+| cline | `~/.agents/skills/` |
+| codex | `~/.codex/skills/` |
+| aider | `~/.aider/skills/` |
+| void | `~/.void/skills/` |
+| pear | `~/.pear/skills/` |
+| zed | `~/.zed/skills/` |
+| continue | `~/.continue/skills/` |
+| goose | `~/.goose/skills/` |
+| trae | `~/.trae/skills/` |
+| aide | `~/.aide/skills/` |
+| qodo | `~/.qodo/skills/` |
+| tabnine | `~/.tabnine/skills/` |
+| gemini-cli | `~/.gemini/skills/` |
+| codeium | `~/.codeium/skills/` |
+| supermaven | `~/.supermaven/skills/` |
+| sourcegraph | `~/.sourcegraph-agent/skills/` |
+
+#### Agents using `.agents/skills/` project and `~/.agents/skills/` global
+
+amp, kimi-cli, replit, universal, composio, devin, bolt, v0, lovable,
+stackblitz, same, softgen, cody-agent, idx, double, cloi, melty, manus, hai
 
 ## Skills Directory Structure
 

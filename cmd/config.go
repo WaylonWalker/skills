@@ -74,7 +74,7 @@ func runConfigShow(cmd *cobra.Command, args []string) error {
 		if t.GlobalDir == "" {
 			globalSupport = theme.Subtle.Render("--")
 		}
-		fmt.Fprintf(os.Stderr, "  %-12s %s  %s\n", t.Name, projectSupport, globalSupport)
+		fmt.Fprintf(os.Stderr, "  %-18s %s  %s\n", t.Name, projectSupport, globalSupport)
 	}
 
 	return nil

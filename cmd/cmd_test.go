@@ -201,7 +201,7 @@ func TestAddEmptyNameFails(t *testing.T) {
 func TestUseUnknownSkillFails(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("SKILLS_DIR", dir)
-	t.Setenv("SKILLS_TOOL", "claude")
+	t.Setenv("SKILLS_TOOL", "claude-code")
 
 	// Create one skill so discovery works (new dir format).
 	os.MkdirAll(filepath.Join(dir, "real"), 0o755)
@@ -223,7 +223,7 @@ func TestUseInstallsSkill(t *testing.T) {
 	os.MkdirAll(filepath.Join(projectDir, ".git"), 0o755)
 
 	t.Setenv("SKILLS_DIR", skillDir)
-	t.Setenv("SKILLS_TOOL", "claude")
+	t.Setenv("SKILLS_TOOL", "claude-code")
 
 	orig, _ := os.Getwd()
 	defer os.Chdir(orig)
@@ -234,8 +234,8 @@ func TestUseInstallsSkill(t *testing.T) {
 		t.Fatalf("use command failed: %v", err)
 	}
 
-	// Verify the symlink was created.
-	link := filepath.Join(projectDir, ".claude", "rules", "test.md")
+	// Verify the symlink was created (all tools now use <dir>/<name>/SKILL.md).
+	link := filepath.Join(projectDir, ".claude", "skills", "test", "SKILL.md")
 	info, err := os.Lstat(link)
 	if err != nil {
 		t.Fatalf("expected symlink at %s: %v", link, err)
@@ -248,7 +248,7 @@ func TestUseInstallsSkill(t *testing.T) {
 func TestUseEmptySkillsDir(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("SKILLS_DIR", dir)
-	t.Setenv("SKILLS_TOOL", "claude")
+	t.Setenv("SKILLS_TOOL", "claude-code")
 
 	// Should not error, just print a warning.
 	err := runUse(useCmd, nil)
@@ -288,7 +288,7 @@ func TestConfigSubcommand(t *testing.T) {
 func TestConfigShowRuns(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("SKILLS_DIR", dir)
-	t.Setenv("SKILLS_TOOL", "claude")
+	t.Setenv("SKILLS_TOOL", "claude-code")
 
 	err := runConfigShow(configShowCmd, nil)
 	if err != nil {
