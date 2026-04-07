@@ -274,10 +274,26 @@ func init() {
 	}
 }
 
+// DefaultTool is the fallback when SKILLS_TOOL is not configured.
+// It installs to the project-local .agents/skills/ directory only,
+// with no global support. This is the safest default since .agents/skills/
+// is the most widely shared project path across agents.
+var DefaultTool = Tool{
+	Name:       "local",
+	ProjectDir: ".agents/skills",
+	// No GlobalDir -- global installs require explicit tool configuration.
+}
+
 // Filtered returns only the tools whose names appear in the given list.
-// If names is empty, all tools are returned.
+// If names is empty (no SKILLS_TOOL configured), only the DefaultTool is
+// returned. This ensures the CLI does not scatter symlinks across dozens
+// of tool directories without explicit opt-in.
+// The special value "all" returns all tools.
 func Filtered(names []string) []Tool {
 	if len(names) == 0 {
+		return []Tool{DefaultTool}
+	}
+	if len(names) == 1 && names[0] == "all" {
 		return All
 	}
 	set := make(map[string]bool, len(names))
@@ -291,6 +307,12 @@ func Filtered(names []string) []Tool {
 		}
 	}
 	return result
+}
+
+// IsConfigured returns true if explicit tool names were provided
+// (i.e. SKILLS_TOOL is set). When false, only the DefaultTool is active.
+func IsConfigured(names []string) bool {
+	return len(names) > 0
 }
 
 // Names returns the names of all supported tools.

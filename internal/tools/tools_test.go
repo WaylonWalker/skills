@@ -97,9 +97,39 @@ func TestFiltered(t *testing.T) {
 }
 
 func TestFilteredEmpty(t *testing.T) {
+	// When no tools are configured, only the DefaultTool is returned.
 	result := Filtered(nil)
+	if len(result) != 1 {
+		t.Errorf("expected 1 tool (DefaultTool), got %d", len(result))
+	}
+	if result[0].Name != "local" {
+		t.Errorf("expected default tool name 'local', got %q", result[0].Name)
+	}
+	if result[0].ProjectDir != ".agents/skills" {
+		t.Errorf("expected ProjectDir '.agents/skills', got %q", result[0].ProjectDir)
+	}
+	if result[0].GlobalDir != "" {
+		t.Errorf("expected empty GlobalDir, got %q", result[0].GlobalDir)
+	}
+}
+
+func TestFilteredAll(t *testing.T) {
+	// The special value "all" returns every tool.
+	result := Filtered([]string{"all"})
 	if len(result) != len(All) {
 		t.Errorf("expected %d tools, got %d", len(All), len(result))
+	}
+}
+
+func TestIsConfigured(t *testing.T) {
+	if IsConfigured(nil) {
+		t.Error("expected false for nil")
+	}
+	if IsConfigured([]string{}) {
+		t.Error("expected false for empty slice")
+	}
+	if !IsConfigured([]string{"claude-code"}) {
+		t.Error("expected true for non-empty slice")
 	}
 }
 

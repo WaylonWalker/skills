@@ -94,3 +94,14 @@ func TestFindProjectRoot(t *testing.T) {
 		t.Errorf("expected %q, got %q", dir, root)
 	}
 }
+
+func TestLoadToolAll(t *testing.T) {
+	t.Setenv("SKILLS_DIR", "")
+	t.Setenv("SKILLS_TOOL", "all")
+
+	cfg := Load()
+
+	if len(cfg.Tools) != 1 || cfg.Tools[0] != "all" {
+		t.Errorf("expected [all], got %v", cfg.Tools)
+	}
+}

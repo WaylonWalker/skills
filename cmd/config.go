@@ -54,16 +54,18 @@ func runConfigShow(cmd *cobra.Command, args []string) error {
 
 	// Tool filter.
 	fmt.Fprintf(os.Stderr, "%s ", theme.Bold.Render("Tool Filter:"))
-	if len(cfg.Tools) == 0 {
-		fmt.Fprintf(os.Stderr, "%s\n", theme.Subtle.Render("all tools"))
+	if !tools.IsConfigured(cfg.Tools) {
+		fmt.Fprintf(os.Stderr, "%s\n", theme.Subtle.Render("not set (using .agents/skills/ only)"))
+		fmt.Fprintf(os.Stderr, "  %s\n", theme.Subtle.Render("Set SKILLS_TOOL to target specific agents, e.g.:"))
+		fmt.Fprintf(os.Stderr, "  %s\n", theme.Subtle.Render("  export SKILLS_TOOL=\"claude-code,opencode\""))
 	} else {
 		fmt.Fprintf(os.Stderr, "%s\n", strings.Join(cfg.Tools, ", "))
 	}
 
 	fmt.Fprintf(os.Stderr, "\n")
 
-	// Supported tools.
-	fmt.Fprintf(os.Stderr, "%s\n", theme.Bold.Render("Supported Tools:"))
+	// Active tools.
+	fmt.Fprintf(os.Stderr, "%s\n", theme.Bold.Render("Active Tools:"))
 	filtered := tools.Filtered(cfg.Tools)
 	for _, t := range filtered {
 		projectSupport := theme.Success.Render("project")
@@ -75,6 +77,15 @@ func runConfigShow(cmd *cobra.Command, args []string) error {
 			globalSupport = theme.Subtle.Render("--")
 		}
 		fmt.Fprintf(os.Stderr, "  %-18s %s  %s\n", t.Name, projectSupport, globalSupport)
+	}
+
+	// Show total available tools count when not all are configured.
+	if !tools.IsConfigured(cfg.Tools) {
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "%s %d agents available. Run %s to see all.\n",
+			theme.Subtle.Render("hint:"),
+			len(tools.All),
+			theme.Bold.Render("SKILLS_TOOL=all skills config"))
 	}
 
 	return nil

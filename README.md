@@ -72,7 +72,19 @@ Set `SKILLS_TOOL` to specify which AI tools to target:
 export SKILLS_TOOL="claude-code,github-copilot,opencode"
 ```
 
-If not set, the CLI targets all 44 supported agents.
+**By default** (when `SKILLS_TOOL` is not set), skills are only installed into
+the project-local `.agents/skills/` directory. This is the safest default since
+many agents share this path. To target specific tool directories or install
+globally, you must set `SKILLS_TOOL` explicitly.
+
+The special value `all` targets every supported agent:
+
+```sh
+export SKILLS_TOOL="all"
+```
+
+Global installs (`-g`) require explicit tool configuration -- the CLI will
+refuse to install globally without `SKILLS_TOOL` set.
 
 All tools follow the agentskills.io specification and install skills as
 `<dir>/<name>/SKILL.md` in both project and global scopes.
@@ -217,7 +229,7 @@ skills config show             # same as above
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `SKILLS_DIR` | Comma-separated list of skills directories | `~/.config/skills` |
-| `SKILLS_TOOL` | Comma-separated list of tools to target | all tools |
+| `SKILLS_TOOL` | Comma-separated list of tools to target (`all` for all) | `.agents/skills/` only |
 | `NO_COLOR` | Disable colored output | unset |
 
 ## License

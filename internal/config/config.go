@@ -10,7 +10,7 @@ import (
 // Config holds the resolved configuration for the CLI.
 type Config struct {
 	SkillsDirs []string // directories to search for skill files
-	Tools      []string // tool filter (empty means all tools)
+	Tools      []string // tool filter (empty means project-local .agents/skills/ only)
 }
 
 // Load reads configuration from environment variables.
@@ -18,7 +18,8 @@ type Config struct {
 // SKILLS_DIR: comma-separated list of directories containing skill files.
 // Defaults to ~/.config/skills.
 //
-// SKILLS_TOOL: comma-separated list of tools to target. Defaults to all.
+// SKILLS_TOOL: comma-separated list of tools to target. Defaults to
+// project-local .agents/skills/ only. Set to "all" for all tools.
 func Load() *Config {
 	cfg := &Config{}
 
@@ -36,10 +37,15 @@ func Load() *Config {
 	}
 
 	if env := os.Getenv("SKILLS_TOOL"); env != "" {
-		for _, t := range strings.Split(env, ",") {
-			t = strings.TrimSpace(strings.ToLower(t))
-			if t != "" {
-				cfg.Tools = append(cfg.Tools, t)
+		// "all" is a special value that explicitly targets all tools.
+		if strings.TrimSpace(strings.ToLower(env)) == "all" {
+			cfg.Tools = []string{"all"}
+		} else {
+			for _, t := range strings.Split(env, ",") {
+				t = strings.TrimSpace(strings.ToLower(t))
+				if t != "" {
+					cfg.Tools = append(cfg.Tools, t)
+				}
 			}
 		}
 	}

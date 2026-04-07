@@ -7,6 +7,7 @@ import (
 	"github.com/WaylonWalker/skills/internal/config"
 	"github.com/WaylonWalker/skills/internal/skills"
 	"github.com/WaylonWalker/skills/internal/theme"
+	"github.com/WaylonWalker/skills/internal/tools"
 	"github.com/WaylonWalker/skills/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -81,6 +82,13 @@ func runUse(cmd *cobra.Command, args []string) error {
 		} else {
 			fmt.Fprintf(os.Stderr, "%s %s -> %s\n", theme.Success.Render("*"), r.Tool, r.Dest)
 		}
+	}
+
+	if !tools.IsConfigured(cfg.Tools) {
+		fmt.Fprintln(os.Stderr)
+		fmt.Fprintln(os.Stderr, theme.Subtle.Render("Installed to .agents/skills/ only (default)."))
+		fmt.Fprintln(os.Stderr, theme.Subtle.Render("Set SKILLS_TOOL to target specific agents, e.g.:"))
+		fmt.Fprintln(os.Stderr, theme.Subtle.Render("  export SKILLS_TOOL=\"claude-code,opencode\""))
 	}
 
 	return nil

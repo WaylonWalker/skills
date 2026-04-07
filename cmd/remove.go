@@ -8,6 +8,7 @@ import (
 	"github.com/WaylonWalker/skills/internal/config"
 	"github.com/WaylonWalker/skills/internal/skills"
 	"github.com/WaylonWalker/skills/internal/theme"
+	"github.com/WaylonWalker/skills/internal/tools"
 	"github.com/WaylonWalker/skills/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -45,6 +46,10 @@ func runRemove(cmd *cobra.Command, args []string) error {
 			scope = "global"
 		}
 		fmt.Fprintf(os.Stderr, "%s No skills installed (%s).\n", theme.Warning.Render("!"), scope)
+		if !tools.IsConfigured(cfg.Tools) {
+			fmt.Fprintln(os.Stderr, theme.Subtle.Render("Only checking .agents/skills/ (default)."))
+			fmt.Fprintln(os.Stderr, theme.Subtle.Render("Set SKILLS_TOOL to check tool-specific directories."))
+		}
 		return nil
 	}
 

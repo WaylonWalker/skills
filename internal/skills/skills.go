@@ -118,6 +118,10 @@ func Discover(cfg *config.Config) ([]Skill, error) {
 
 // Install creates symlinks for a skill in the appropriate tool directories.
 func Install(cfg *config.Config, skill Skill, global bool) ([]InstallResult, error) {
+	if global && !tools.IsConfigured(cfg.Tools) {
+		return nil, fmt.Errorf("global install requires explicit tool configuration\nSet SKILLS_TOOL to specify which tools to target, e.g.:\n  export SKILLS_TOOL=\"claude-code,opencode\"")
+	}
+
 	filtered := tools.Filtered(cfg.Tools)
 	var results []InstallResult
 
@@ -194,6 +198,10 @@ func Install(cfg *config.Config, skill Skill, global bool) ([]InstallResult, err
 // Installed returns all skills currently installed for the given scope.
 // All tools use the uniform <dir>/<name>/SKILL.md pattern.
 func Installed(cfg *config.Config, global bool) ([]InstalledSkill, error) {
+	if global && !tools.IsConfigured(cfg.Tools) {
+		return nil, fmt.Errorf("global listing requires explicit tool configuration\nSet SKILLS_TOOL to specify which tools to target, e.g.:\n  export SKILLS_TOOL=\"claude-code,opencode\"")
+	}
+
 	filtered := tools.Filtered(cfg.Tools)
 	var result []InstalledSkill
 

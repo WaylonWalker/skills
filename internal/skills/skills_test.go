@@ -366,3 +366,92 @@ func TestInstallAndCleanup(t *testing.T) {
 		t.Error("expected skill subdir to be cleaned up")
 	}
 }
+
+func TestInstallGlobalWithoutConfigFails(t *testing.T) {
+	skillDir := t.TempDir()
+
+	os.MkdirAll(filepath.Join(skillDir, "test-skill"), 0o755)
+	os.WriteFile(filepath.Join(skillDir, "test-skill", "SKILL.md"), []byte("---\nname: test-skill\ndescription: Test skill\n---\n# test-skill\n"), 0o644)
+
+	cfg := &config.Config{
+		SkillsDirs: []string{skillDir},
+		Tools:      nil, // no tools configured
+	}
+
+	available, err := Discover(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Install(cfg, available[0], true)
+	if err == nil {
+		t.Fatal("expected error for global install without configured tools")
+	}
+}
+
+func TestInstalledGlobalWithoutConfigFails(t *testing.T) {
+	cfg := &config.Config{
+		SkillsDirs: []string{t.TempDir()},
+		Tools:      nil, // no tools configured
+	}
+
+	_, err := Installed(cfg, true)
+	if err == nil {
+		t.Fatal("expected error for global listing without configured tools")
+	}
+}
+
+func TestInstallDefaultToolProject(t *testing.T) {
+	skillDir := t.TempDir()
+	projectDir := t.TempDir()
+
+	os.MkdirAll(filepath.Join(skillDir, "test-skill"), 0o755)
+	skillPath := filepath.Join(skillDir, "test-skill", "SKILL.md")
+	os.WriteFile(skillPath, []byte("---\nname: test-skill\ndescription: Test skill\n---\n# test-skill\n"), 0o644)
+
+	os.MkdirAll(filepath.Join(projectDir, ".git"), 0o755)
+
+	orig, _ := os.Getwd()
+	defer os.Chdir(orig)
+	os.Chdir(projectDir)
+
+	cfg := &config.Config{
+		SkillsDirs: []string{skillDir},
+		Tools:      nil, // no tools configured, uses DefaultTool
+	}
+
+	available, err := Discover(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := Install(cfg, available[0], false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	r := results[0]
+	if r.Err != nil {
+		t.Fatalf("install failed: %v", r.Err)
+	}
+	if r.Tool != "local" {
+		t.Errorf("expected tool 'local', got %q", r.Tool)
+	}
+
+	expectedDest := filepath.Join(projectDir, ".agents", "skills", "test-skill", "SKILL.md")
+	if r.Dest != expectedDest {
+		t.Errorf("expected dest %q, got %q", expectedDest, r.Dest)
+	}
+
+	info, err := os.Lstat(r.Dest)
+	if err != nil {
+		t.Fatalf("expected symlink at %s: %v", r.Dest, err)
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		t.Error("expected symlink")
+	}
+}
