@@ -5,72 +5,108 @@ import (
 	"testing"
 )
 
-func TestProjectPath(t *testing.T) {
+func TestProjectPaths(t *testing.T) {
 	tool := Tool{
 		Name:       "claude-code",
 		ProjectDir: ".claude/skills",
 	}
 
-	got := tool.ProjectPath("/my/project", "go-rules")
+	got := tool.ProjectPaths("/my/project", "go-rules")
+	if len(got) != 1 {
+		t.Fatalf("expected 1 path, got %d", len(got))
+	}
 	expected := "/my/project/.claude/skills/go-rules"
-	if got != expected {
-		t.Errorf("expected %q, got %q", expected, got)
+	if got[0] != expected {
+		t.Errorf("expected %q, got %q", expected, got[0])
 	}
 }
 
-func TestProjectPathEmpty(t *testing.T) {
+func TestProjectPathsEmpty(t *testing.T) {
 	tool := Tool{
 		Name:      "custom",
 		GlobalDir: "/home/user/.custom/skills",
 		// No ProjectDir set.
 	}
 
-	got := tool.ProjectPath("/my/project", "go-rules")
-	if got != "" {
-		t.Errorf("expected empty, got %q", got)
+	got := tool.ProjectPaths("/my/project", "go-rules")
+	if len(got) != 0 {
+		t.Errorf("expected empty, got %v", got)
 	}
 }
 
-func TestGlobalPath(t *testing.T) {
+func TestGlobalPaths(t *testing.T) {
 	tool := Tool{
 		Name:       "opencode",
 		ProjectDir: ".agents/skills",
 		GlobalDir:  "/home/user/.config/opencode/skills",
 	}
 
-	got := tool.GlobalPath("go-rules")
+	got := tool.GlobalPaths("go-rules")
+	if len(got) != 1 {
+		t.Fatalf("expected 1 path, got %d", len(got))
+	}
 	expected := "/home/user/.config/opencode/skills/go-rules"
-	if got != expected {
-		t.Errorf("expected %q, got %q", expected, got)
+	if got[0] != expected {
+		t.Errorf("expected %q, got %q", expected, got[0])
 	}
 }
 
-func TestGlobalPathEmpty(t *testing.T) {
+func TestGlobalPathsEmpty(t *testing.T) {
 	tool := Tool{
 		Name:       "no-global",
 		ProjectDir: ".agents/skills",
 		// No GlobalDir set.
 	}
 
-	got := tool.GlobalPath("my-skill")
-	if got != "" {
-		t.Errorf("expected empty, got %q", got)
+	got := tool.GlobalPaths("my-skill")
+	if len(got) != 0 {
+		t.Errorf("expected empty, got %v", got)
+	}
+}
+
+func TestCopilotPathsIncludeAllDocumentedLocations(t *testing.T) {
+	var copilot Tool
+	for _, tool := range All {
+		if tool.Name == "github-copilot" {
+			copilot = tool
+			break
+		}
+	}
+
+	projectPaths := copilot.ProjectPaths("/repo", "test-skill")
+	if len(projectPaths) != 2 {
+		t.Fatalf("expected 2 project paths, got %d", len(projectPaths))
+	}
+	if projectPaths[0] != "/repo/.agents/skills/test-skill" {
+		t.Errorf("unexpected first project path: %q", projectPaths[0])
+	}
+	if projectPaths[1] != "/repo/.github/skills/test-skill" {
+		t.Errorf("unexpected second project path: %q", projectPaths[1])
+	}
+
+	globalPaths := copilot.GlobalPaths("test-skill")
+	if len(globalPaths) != 2 {
+		t.Fatalf("expected 2 global paths, got %d", len(globalPaths))
+	}
+	if !strings.HasSuffix(globalPaths[0], "/.copilot/skills/test-skill") {
+		t.Errorf("unexpected first global path: %q", globalPaths[0])
+	}
+	if !strings.HasSuffix(globalPaths[1], "/.agents/skills/test-skill") {
+		t.Errorf("unexpected second global path: %q", globalPaths[1])
 	}
 }
 
 func TestAllPathsAreSubdirs(t *testing.T) {
 	// Every tool should produce paths ending in <name>/.
 	for _, tool := range All {
-		if tool.ProjectDir != "" {
-			p := tool.ProjectPath("/root", "test-skill")
+		for _, p := range tool.ProjectPaths("/root", "test-skill") {
 			if !strings.HasSuffix(p, "test-skill") {
-				t.Errorf("%s: ProjectPath should end with test-skill, got %q", tool.Name, p)
+				t.Errorf("%s: ProjectPaths should end with test-skill, got %q", tool.Name, p)
 			}
 		}
-		if tool.GlobalDir != "" {
-			g := tool.GlobalPath("test-skill")
+		for _, g := range tool.GlobalPaths("test-skill") {
 			if !strings.HasSuffix(g, "test-skill") {
-				t.Errorf("%s: GlobalPath should end with test-skill, got %q", tool.Name, g)
+				t.Errorf("%s: GlobalPaths should end with test-skill, got %q", tool.Name, g)
 			}
 		}
 	}

@@ -17,27 +17,37 @@ import (
 // skill files to be located. All tools use the uniform pattern
 // <dir>/<name>/ for both project and global scopes.
 type Tool struct {
-	Name       string // tool identifier (used with --agent flag / SKILLS_TOOL)
-	ProjectDir string // relative to project root (empty = not supported)
-	GlobalDir  string // absolute path (empty = not supported)
+	Name             string   // tool identifier (used with --agent flag / SKILLS_TOOL)
+	ProjectDir       string   // primary project path, relative to project root (empty = not supported)
+	GlobalDir        string   // primary global path, absolute (empty = not supported)
+	ExtraProjectDirs []string // additional supported project paths
+	ExtraGlobalDirs  []string // additional supported global paths
 }
 
-// ProjectPath returns the full path where a skill should be installed at the
-// project level. Returns empty string if the tool has no project-level support.
-func (t Tool) ProjectPath(projectRoot, skillName string) string {
-	if t.ProjectDir == "" {
-		return ""
+// ProjectPaths returns the full paths where a skill should be installed at the
+// project level.
+func (t Tool) ProjectPaths(projectRoot, skillName string) []string {
+	var paths []string
+	for _, dir := range append([]string{t.ProjectDir}, t.ExtraProjectDirs...) {
+		if dir == "" {
+			continue
+		}
+		paths = append(paths, filepath.Join(projectRoot, dir, skillName))
 	}
-	return filepath.Join(projectRoot, t.ProjectDir, skillName)
+	return uniqueStrings(paths)
 }
 
-// GlobalPath returns the full path where a skill should be installed globally.
-// Returns empty string if the tool has no global support.
-func (t Tool) GlobalPath(skillName string) string {
-	if t.GlobalDir == "" {
-		return ""
+// GlobalPaths returns the full paths where a skill should be installed
+// globally.
+func (t Tool) GlobalPaths(skillName string) []string {
+	var paths []string
+	for _, dir := range append([]string{t.GlobalDir}, t.ExtraGlobalDirs...) {
+		if dir == "" {
+			continue
+		}
+		paths = append(paths, filepath.Join(dir, skillName))
 	}
-	return filepath.Join(t.GlobalDir, skillName)
+	return uniqueStrings(paths)
 }
 
 // All is the registry of supported tools.
@@ -89,6 +99,12 @@ func init() {
 			Name:       "github-copilot",
 			ProjectDir: ".agents/skills",
 			GlobalDir:  filepath.Join(home, ".copilot", "skills"),
+			ExtraProjectDirs: []string{
+				".github/skills",
+			},
+			ExtraGlobalDirs: []string{
+				filepath.Join(home, ".agents", "skills"),
+			},
 		},
 		{
 			Name:       "opencode",
@@ -323,4 +339,17 @@ func Names() []string {
 		names[i] = t.Name
 	}
 	return names
+}
+
+func uniqueStrings(values []string) []string {
+	seen := make(map[string]bool, len(values))
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		if value == "" || seen[value] {
+			continue
+		}
+		seen[value] = true
+		result = append(result, value)
+	}
+	return result
 }

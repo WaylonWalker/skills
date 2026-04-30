@@ -65,16 +65,15 @@ func runRemove(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	var selected *skills.InstalledSkill
+	var selected []*skills.InstalledSkill
 	if len(args) == 1 {
 		name := args[0]
 		for i := range installed {
 			if installed[i].Name == name {
-				selected = &installed[i]
-				break
+				selected = append(selected, &installed[i])
 			}
 		}
-		if selected == nil {
+		if len(selected) == 0 {
 			return fmt.Errorf("skill %q not found in installed skills", name)
 		}
 	} else {
@@ -98,39 +97,41 @@ func runRemove(cmd *cobra.Command, args []string) error {
 
 		for i := range installed {
 			if installed[i].Name == picked.Name && installed[i].Path == picked.Path {
-				selected = &installed[i]
+				selected = []*skills.InstalledSkill{&installed[i]}
 				break
 			}
 		}
-		if selected == nil {
+		if len(selected) == 0 {
 			return nil
 		}
 	}
 
-	// Warn if the installed directory is not a symlink and force is not set.
-	if !selected.IsSymlink && !force {
-		if !ui.IsInteractiveTerminal() {
-			return fmt.Errorf("%s is not a symlink; rerun with --force to remove it non-interactively", selected.Path)
+	for _, skill := range selected {
+		// Warn if the installed directory is not a symlink and force is not set.
+		if !skill.IsSymlink && !force {
+			if !ui.IsInteractiveTerminal() {
+				return fmt.Errorf("%s is not a symlink; rerun with --force to remove it non-interactively", skill.Path)
+			}
+			fmt.Fprintf(os.Stderr, "%s %s is not a symlink.\n", theme.Warning.Render("warning:"), skill.Path)
+			fmt.Fprint(os.Stderr, "Remove anyway? [y/N] ")
+			var answer string
+			if _, err := fmt.Scanln(&answer); err != nil && err.Error() != "unexpected newline" {
+				return fmt.Errorf("reading confirmation: %w", err)
+			}
+			if !strings.HasPrefix(strings.ToLower(answer), "y") {
+				fmt.Fprintln(os.Stderr, "Cancelled.")
+				return nil
+			}
 		}
-		fmt.Fprintf(os.Stderr, "%s %s is not a symlink.\n", theme.Warning.Render("warning:"), selected.Path)
-		fmt.Fprint(os.Stderr, "Remove anyway? [y/N] ")
-		var answer string
-		if _, err := fmt.Scanln(&answer); err != nil && err.Error() != "unexpected newline" {
-			return fmt.Errorf("reading confirmation: %w", err)
+
+		if err := os.Remove(skill.Path); err != nil {
+			return fmt.Errorf("removing %s: %w", skill.Path, err)
 		}
-		if !strings.HasPrefix(strings.ToLower(answer), "y") {
-			fmt.Fprintln(os.Stderr, "Cancelled.")
-			return nil
-		}
+
+		// Clean up empty parent directory (e.g. opencode subdirs).
+		skills.CleanupEmptyParent(skill.Path)
+
+		fmt.Fprintf(os.Stderr, "%s Removed %s (%s)\n", theme.Success.Render("*"), skill.Name, skill.Tool)
 	}
-
-	if err := os.Remove(selected.Path); err != nil {
-		return fmt.Errorf("removing %s: %w", selected.Path, err)
-	}
-
-	// Clean up empty parent directory (e.g. opencode subdirs).
-	skills.CleanupEmptyParent(selected.Path)
-
-	fmt.Fprintf(os.Stderr, "%s Removed %s (%s)\n", theme.Success.Render("*"), selected.Name, selected.Tool)
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/WaylonWalker/skills/internal/config"
+	"github.com/WaylonWalker/skills/internal/tools"
 )
 
 func mustMkdirAll(t *testing.T, path string) {
@@ -473,5 +474,103 @@ func TestInstallDefaultToolProject(t *testing.T) {
 	}
 	if info.Mode()&os.ModeSymlink == 0 {
 		t.Error("expected symlink")
+	}
+}
+
+func TestInstallCopilotUsesAllSupportedPaths(t *testing.T) {
+	skillDir := t.TempDir()
+	projectDir := t.TempDir()
+	homeDir := t.TempDir()
+
+	mustMkdirAll(t, filepath.Join(skillDir, "test-skill"))
+	mustWriteFile(t, filepath.Join(skillDir, "test-skill", "SKILL.md"), "---\nname: test-skill\ndescription: Test skill\n---\n# test-skill\n")
+	mustMkdirAll(t, filepath.Join(projectDir, ".git"))
+
+	orig, _ := os.Getwd()
+	defer mustChdir(t, orig)
+	mustChdir(t, projectDir)
+
+	var originalCopilot tools.Tool
+	var copilotIndex int
+	for i, tool := range tools.All {
+		if tool.Name == "github-copilot" {
+			originalCopilot = tool
+			copilotIndex = i
+			tools.All[i].GlobalDir = filepath.Join(homeDir, ".copilot", "skills")
+			tools.All[i].ExtraGlobalDirs = []string{filepath.Join(homeDir, ".agents", "skills")}
+			break
+		}
+	}
+	defer func() {
+		tools.All[copilotIndex] = originalCopilot
+	}()
+
+	cfg := &config.Config{
+		SkillsDirs: []string{skillDir},
+		Tools:      []string{"github-copilot"},
+	}
+
+	available, err := Discover(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := Install(cfg, available[0], false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 install results, got %d", len(results))
+	}
+
+	for _, expected := range []string{
+		filepath.Join(projectDir, ".agents", "skills", "test-skill"),
+		filepath.Join(projectDir, ".github", "skills", "test-skill"),
+	} {
+		info, err := os.Lstat(expected)
+		if err != nil {
+			t.Fatalf("expected symlink at %s: %v", expected, err)
+		}
+		if info.Mode()&os.ModeSymlink == 0 {
+			t.Fatalf("expected symlink at %s", expected)
+		}
+	}
+
+	installed, err := Installed(cfg, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(installed) != 2 {
+		t.Fatalf("expected 2 installed project skills, got %d", len(installed))
+	}
+
+	results, err = Install(cfg, available[0], true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 2 {
+		t.Fatalf("expected 2 global install results, got %d", len(results))
+	}
+
+	for _, expected := range []string{
+		filepath.Join(homeDir, ".copilot", "skills", "test-skill"),
+		filepath.Join(homeDir, ".agents", "skills", "test-skill"),
+	} {
+		info, err := os.Lstat(expected)
+		if err != nil {
+			t.Fatalf("expected symlink at %s: %v", expected, err)
+		}
+		if info.Mode()&os.ModeSymlink == 0 {
+			t.Fatalf("expected symlink at %s", expected)
+		}
+	}
+
+	installed, err = Installed(cfg, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(installed) != 2 {
+		t.Fatalf("expected 2 installed global skills, got %d", len(installed))
 	}
 }

@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/WaylonWalker/skills/internal/tools"
@@ -24,18 +24,26 @@ func init() {
 }
 
 func runSupported(cmd *cobra.Command, args []string) error {
-	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(tw, "NAME\tPROJECT PATH\tGLOBAL PATH")
+	tw := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
+	fmt.Fprintln(tw, "NAME\tPROJECT PATHS\tGLOBAL PATHS")
 	for _, tool := range tools.All {
-		projectPath := tool.ProjectDir
-		if projectPath == "" {
-			projectPath = "-"
-		}
-		globalPath := tool.GlobalDir
-		if globalPath == "" {
-			globalPath = "-"
-		}
-		fmt.Fprintf(tw, "%s\t%s\t%s\n", tool.Name, projectPath, globalPath)
+		projectPaths := joinPaths(append([]string{tool.ProjectDir}, tool.ExtraProjectDirs...))
+		globalPaths := joinPaths(append([]string{tool.GlobalDir}, tool.ExtraGlobalDirs...))
+		fmt.Fprintf(tw, "%s\t%s\t%s\n", tool.Name, projectPaths, globalPaths)
 	}
 	return tw.Flush()
+}
+
+func joinPaths(paths []string) string {
+	var filtered []string
+	for _, path := range paths {
+		if path == "" {
+			continue
+		}
+		filtered = append(filtered, path)
+	}
+	if len(filtered) == 0 {
+		return "-"
+	}
+	return strings.Join(filtered, ", ")
 }

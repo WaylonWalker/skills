@@ -487,32 +487,17 @@ func TestRemoveNonSymlinkFailsNonInteractivelyWithoutForce(t *testing.T) {
 }
 
 func TestSupportedRuns(t *testing.T) {
-	origStdout := os.Stdout
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("pipe failed: %v", err)
-	}
-	os.Stdout = w
-	defer func() {
-		os.Stdout = origStdout
-	}()
+	stdout := new(bytes.Buffer)
+	supportedCmd.SetOut(stdout)
+	defer supportedCmd.SetOut(nil)
 
-	err = runSupported(supportedCmd, nil)
+	err := runSupported(supportedCmd, nil)
 	if err != nil {
 		t.Fatalf("supported failed: %v", err)
 	}
 
-	if err := w.Close(); err != nil {
-		t.Fatalf("close failed: %v", err)
-	}
-
-	var buf bytes.Buffer
-	if _, err := buf.ReadFrom(r); err != nil {
-		t.Fatalf("read failed: %v", err)
-	}
-
-	out := buf.String()
-	if !containsString(out, "NAME") || !containsString(out, "PROJECT PATH") || !containsString(out, "GLOBAL PATH") {
+	out := stdout.String()
+	if !containsString(out, "NAME") || !containsString(out, "PROJECT PATHS") || !containsString(out, "GLOBAL PATHS") {
 		t.Fatalf("expected table headers in output, got %q", out)
 	}
 	if !containsString(out, "claude-code") {
@@ -523,6 +508,12 @@ func TestSupportedRuns(t *testing.T) {
 	}
 	if !containsString(out, ".config/opencode/skills") {
 		t.Fatalf("expected opencode global path in output, got %q", out)
+	}
+	if !containsString(out, ".agents/skills, .github/skills") {
+		t.Fatalf("expected Copilot project paths in output, got %q", out)
+	}
+	if !containsString(out, ".copilot/skills") || !containsString(out, ".agents/skills") {
+		t.Fatalf("expected Copilot global paths in output, got %q", out)
 	}
 }
 

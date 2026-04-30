@@ -137,14 +137,14 @@ func Install(cfg *config.Config, skill Skill, global bool) ([]InstallResult, err
 	}
 
 	for _, tool := range filtered {
-		var dest string
+		var destinations []string
 		if global {
-			dest = tool.GlobalPath(skill.Name)
+			destinations = tool.GlobalPaths(skill.Name)
 		} else {
-			dest = tool.ProjectPath(projectRoot, skill.Name)
+			destinations = tool.ProjectPaths(projectRoot, skill.Name)
 		}
 
-		if dest == "" {
+		if len(destinations) == 0 {
 			scope := "project"
 			if global {
 				scope = "global"
@@ -157,46 +157,51 @@ func Install(cfg *config.Config, skill Skill, global bool) ([]InstallResult, err
 			continue
 		}
 
-		// Create parent directory.
-		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-			results = append(results, InstallResult{
-				Tool: tool.Name,
-				Err:  fmt.Errorf("creating directory: %w", err),
-			})
-			continue
-		}
-
-		// If destination exists, handle it.
-		if info, err := os.Lstat(dest); err == nil {
-			if info.Mode()&os.ModeSymlink != 0 {
-				os.Remove(dest)
-			} else {
-				results = append(results, InstallResult{
-					Tool:    tool.Name,
-					Skipped: true,
-					Reason:  "file exists and is not a symlink (use -f to overwrite)",
-				})
-				continue
-			}
-		}
-
 		target := skill.Path
 		if skill.DirPath != "" {
 			target = skill.DirPath
 		}
 
-		if err := os.Symlink(target, dest); err != nil {
+		for _, dest := range destinations {
+			// Create parent directory.
+			if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+				results = append(results, InstallResult{
+					Tool: tool.Name,
+					Dest: dest,
+					Err:  fmt.Errorf("creating directory: %w", err),
+				})
+				continue
+			}
+
+			// If destination exists, handle it.
+			if info, err := os.Lstat(dest); err == nil {
+				if info.Mode()&os.ModeSymlink != 0 {
+					os.Remove(dest)
+				} else {
+					results = append(results, InstallResult{
+						Tool:    tool.Name,
+						Dest:    dest,
+						Skipped: true,
+						Reason:  "file exists and is not a symlink (use -f to overwrite)",
+					})
+					continue
+				}
+			}
+
+			if err := os.Symlink(target, dest); err != nil {
+				results = append(results, InstallResult{
+					Tool: tool.Name,
+					Dest: dest,
+					Err:  err,
+				})
+				continue
+			}
+
 			results = append(results, InstallResult{
 				Tool: tool.Name,
-				Err:  err,
+				Dest: dest,
 			})
-			continue
 		}
-
-		results = append(results, InstallResult{
-			Tool: tool.Name,
-			Dest: dest,
-		})
 	}
 
 	return results, nil
@@ -222,52 +227,54 @@ func Installed(cfg *config.Config, global bool) ([]InstalledSkill, error) {
 	}
 
 	for _, tool := range filtered {
-		var dir string
+		var dirs []string
 		if global {
-			if tool.GlobalDir == "" {
+			dirs = tool.GlobalPaths("")
+			if len(dirs) == 0 {
 				continue
 			}
-			dir = tool.GlobalDir
 		} else {
-			if tool.ProjectDir == "" {
+			dirs = tool.ProjectPaths(projectRoot, "")
+			if len(dirs) == 0 {
 				continue
 			}
-			dir = filepath.Join(projectRoot, tool.ProjectDir)
 		}
 
-		entries, err := os.ReadDir(dir)
-		if err != nil {
-			continue
-		}
-
-		for _, e := range entries {
-			info, err := os.Lstat(filepath.Join(dir, e.Name()))
+		for _, dir := range dirs {
+			entries, err := os.ReadDir(dir)
 			if err != nil {
 				continue
 			}
-			if !e.IsDir() && info.Mode()&os.ModeSymlink == 0 {
-				continue
-			}
-			skillPath := filepath.Join(dir, e.Name())
-			resolvedInfo := info
-			if info.Mode()&os.ModeSymlink != 0 {
-				resolvedInfo, err = os.Stat(skillPath)
+
+			for _, e := range entries {
+				info, err := os.Lstat(filepath.Join(dir, e.Name()))
 				if err != nil {
 					continue
 				}
+				if !e.IsDir() && info.Mode()&os.ModeSymlink == 0 {
+					continue
+				}
+				skillPath := filepath.Join(dir, e.Name())
+				resolvedInfo := info
+				if info.Mode()&os.ModeSymlink != 0 {
+					resolvedInfo, err = os.Stat(skillPath)
+					if err != nil {
+						continue
+					}
+				}
+				if !resolvedInfo.IsDir() {
+					continue
+				}
+				if _, err := os.Stat(filepath.Join(skillPath, "SKILL.md")); err != nil {
+					continue
+				}
+				result = append(result, InstalledSkill{
+					Name:      e.Name(),
+					Path:      skillPath,
+					Tool:      tool.Name,
+					IsSymlink: info.Mode()&os.ModeSymlink != 0,
+				})
 			}
-			if !resolvedInfo.IsDir() {
-				continue
-			}
-			if _, err := os.Stat(filepath.Join(skillPath, "SKILL.md")); err != nil {
-				continue
-			}
-			result = append(result, InstalledSkill{
-				Name:      e.Name(),
-				Path:      skillPath,
-				Tool:      tool.Name,
-				IsSymlink: info.Mode()&os.ModeSymlink != 0,
-			})
 		}
 	}
 

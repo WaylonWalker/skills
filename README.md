@@ -111,6 +111,11 @@ refuse to install globally without `SKILLS_TOOL` set.
 All tools follow the agentskills.io specification and install skills as
 `<dir>/<name>/` symlinks in both project and global scopes.
 
+GitHub Copilot supports multiple documented locations for agent skills. When
+targeting `github-copilot`, this CLI installs to both project paths
+(`.agents/skills/` and `.github/skills/`) and both global paths
+(`~/.copilot/skills/` and `~/.agents/skills/`).
+
 The full agent table is derived from [vercel-labs/skills](https://github.com/vercel-labs/skills).
 
 #### Agents with unique project paths
@@ -129,7 +134,7 @@ The full agent table is derived from [vercel-labs/skills](https://github.com/ver
 | Agent | Global Path |
 |-------|-------------|
 | cursor | `~/.cursor/skills/` |
-| github-copilot | `~/.copilot/skills/` |
+| github-copilot | `~/.copilot/skills/`, `~/.agents/skills/` |
 | opencode | `~/.config/opencode/skills/` |
 | cline | `~/.agents/skills/` |
 | codex | `~/.codex/skills/` |
