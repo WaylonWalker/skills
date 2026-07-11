@@ -1,0 +1,23 @@
+{
+  "skill_name": "terraria-modding",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I just installed tModLoader and want to make my first Terraria mod. Walk me through the right setup on Windows, generate the proper project shape, explain what `build.txt` is for, and give me a minimal sword example with localization.",
+      "expected_output": "Uses the Terraria modding skill, prefers the built-in mod skeleton and official tModLoader workflow, explains .NET 8 and IDE setup, documents the generated files, and gives a small but correct `ModItem` plus HJSON example.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "My tModLoader mod already exists. Add a ranged weapon that swaps normal bullets for a custom projectile, tell me where the asset and code files should live, and explain the best build/test loop. Hot reload would be nice if there is a supported way.",
+      "expected_output": "Uses the Terraria modding skill, chooses `ModItem` plus `ModProjectile`, references stable ExampleMod patterns, explains asset placement, distinguishes Build + Reload from IDE hot reload workflows, and warns about load-time limitations.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I need optional compatibility with another Terraria mod. Show me the difference between `modReferences`, `weakReferences`, and `Mod.Call`, and help me avoid crashes if the other mod is not installed.",
+      "expected_output": "Uses the Terraria modding skill, recommends the safest interoperability path, explains optional lookup and `Mod.Call`, covers weak reference JIT pitfalls, and gives realistic guarded code patterns.",
+      "files": []
+    }
+  ]
+}
