@@ -33,7 +33,10 @@ Apply these defaults from `clig.dev` unless the repository already has a deliber
 - Never require prompts. Every interactive input needs a non-interactive flag, argument, or `stdin` path.
 - Confirm destructive actions. Make severe actions deliberately hard to confirm.
 - Respect terminal capabilities: disable color and animations for non-TTY output.
+- When output is interactive, prefer rich, colorful presentation with a consistent semantic theme instead of ad hoc ANSI codes.
 - Keep success output brief, but not so quiet that the command feels hung.
+- If work is likely to take longer than about 1 second, show a spinner on `stderr` in interactive mode.
+- For long-running interactive work, it is good to rotate short tips or context while the spinner runs.
 - Rewrite expected errors into useful, actionable messages.
 
 ## Workflow
@@ -45,6 +48,8 @@ Follow this order:
 3. Choose the framework guidance below.
 4. Implement the behavior and update help text, examples, or docs when the command surface changes.
 5. Verify the user-visible behavior, not just the internals.
+
+If the task includes interactive styling, themes, or color systems, also read `references/opencode-themes.md`.
 
 Minimum verification for CLI changes:
 
@@ -80,6 +85,22 @@ Design for both humans and shells:
 - If a command changes remote or hidden state, tell the user what changed.
 - If the command needs configuration, use clear precedence: flags, environment, project config, user config, system config.
 - If the CLI has durable configuration, make it discoverable through a `config` command instead of forcing users to edit files manually.
+
+## Interactive color and progress guidance
+
+For interactive CLIs, plain monochrome output should be the fallback, not the design target.
+
+- Use color to make the interface easier to scan: hierarchy, status, focus, warnings, success, and next steps.
+- Use semantic theme tokens such as primary, accent, success, warning, error, muted text, and background surfaces.
+- Keep theme IDs stable if the CLI exposes theme selection. Prefer the OpenCode theme set in `references/opencode-themes.md`.
+- Do not rely on color alone to communicate critical state.
+- Disable decorative color and animation for non-TTY output, `--plain`, `--json`, or `--no-color`.
+- If the command will likely take longer than about 1 second, start a spinner quickly so the CLI never feels stalled.
+- Put spinners and progress messages on `stderr`, not `stdout`.
+- Spinner labels should say what the tool is doing now, in plain language.
+- Prefer a braille snake spinner for interactive progress unless the repository already uses another spinner style.
+- For longer tasks, it is good to rotate short tips, assumptions, or the next likely step while the spinner runs.
+- Stop the spinner cleanly before printing the final result or any blocking prompt.
 
 ## Common flags and commands
 
@@ -362,6 +383,7 @@ Use these conventions unless the repo already has a stronger contract:
 - `--json`: structured output with stable field names.
 - `--plain`: stable, line-oriented output without decoration.
 - Human formatting may use color and layout only when writing to a TTY.
+- Spinners, progress notes, and rotating tips belong on `stderr` and should never contaminate `stdout` payloads.
 
 For large human-oriented output:
 

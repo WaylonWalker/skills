@@ -366,6 +366,10 @@ Charm Log supports text, JSON, and logfmt formatters. Its styling is disabled au
 
 Use Lip Gloss for readable human output, not for machine mode.
 
+- Keep theme definitions in one package and style from semantic tokens, not raw literals scattered through commands.
+- If you want a larger built-in theme catalog, start with the OpenCode theme IDs in `references/opencode-themes.md`.
+- Map each theme into semantic slots such as `primary`, `accent`, `success`, `warning`, `error`, `muted`, and surface colors.
+
 ```go
 title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("63"))
 fmt.Fprintln(os.Stdout, title.Render("Deployment complete"))
@@ -472,8 +476,14 @@ If work takes noticeable time:
 - say something quickly on `stderr`
 - show progress only when writing to a TTY
 - avoid animations in non-interactive contexts
+- if the work will likely take longer than about 1 second, start a spinner
+- prefer a braille snake spinner when the library allows custom frames
+- keep the spinner text specific about the current step
+- for longer waits, surface short tips or context on `stderr`
 
 For prompt-driven workflows, `huh/spinner` is a good fit after submission. For TUIs, keep progress inside Bubble Tea.
+
+For one-shot commands, a small spinner wrapper around the blocking operation is usually enough. Keep it off `stdout`, stop it before prompts, and fall back to a single status line when stderr is not a TTY.
 
 ## Errors and exit behavior
 

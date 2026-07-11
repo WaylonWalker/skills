@@ -371,6 +371,63 @@ def list_items(
 
 Do not mix logs into `stdout` when `--json` is active.
 
+## Rich output, themes, and spinners
+
+For interactive Python CLIs, prefer Rich-backed output instead of raw ANSI strings.
+
+- Keep a central theme registry keyed by stable IDs.
+- Start with the OpenCode theme IDs in `references/opencode-themes.md`.
+- Map theme IDs into semantic styles such as `primary`, `accent`, `success`, `warning`, `error`, and `muted`.
+- Use Rich formatting only for TTY output. Keep `--json`, `--plain`, and non-interactive output undecorated.
+- Expose `--no-color` when the CLI has human-formatted output.
+
+Minimal shape:
+
+```python
+import sys
+
+import typer
+from rich.console import Console
+from rich.theme import Theme
+
+stdout_console = Console()
+stderr_console = Console(stderr=True)
+
+THEMES = {
+    "tokyonight": Theme(
+        {
+            "primary": "bold #7aa2f7",
+            "accent": "#bb9af7",
+            "success": "#9ece6a",
+            "warning": "#e0af68",
+            "error": "#f7768e",
+            "muted": "#565f89",
+        }
+    )
+}
+
+
+def run_sync() -> None:
+    if not sys.stderr.isatty():
+        typer.echo("Syncing remote state...", err=True)
+        do_sync()
+        return
+
+    console = Console(stderr=True, theme=THEMES["tokyonight"])
+    with console.status("[primary]Syncing remote state...[/]"):
+        do_sync()
+```
+
+For tasks expected to run longer than about 1 second:
+
+- show a spinner quickly on `stderr`
+- prefer a braille snake spinner when the library allows custom frames
+- keep the label concrete, such as `Fetching releases...`
+- if the task may take a while, print short tips or progress context on `stderr`
+- stop the spinner before prompts or final output
+
+If the command needs more control than `Console.status()`, use `Progress` with `SpinnerColumn` and `TextColumn`.
+
 ## Errors
 
 Rewrite expected failures into clear messages.
