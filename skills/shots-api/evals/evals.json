@@ -1,0 +1,23 @@
+{
+  "skill_name": "shots-api",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need a curl command for our local Shot Scraper API that grabs a dark-mode screenshot of https://example.com at 1440x900 and saves it to a file instead of dumping binary into the terminal.",
+      "expected_output": "Uses the shots-api skill, chooses a blocking image endpoint, uses the correct query parameter names, and saves the image output to a file.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Wire my app to enqueue screenshots instead of waiting on them. I want the first request to return a job id, then I can poll until the shot is ready. Show me the HTTP flow against Shot Scraper API.",
+      "expected_output": "Uses the shots-api skill, selects POST /trigger/shot plus GET /job/{job_id}, and explains how to handle returned relative URLs and queue statuses.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "My screenshot call is failing and I need to debug it. The URL is valid, but I may have passed bad timeout or theme values. Show me how to inspect the status code, response body, and headers from the Shot Scraper API.",
+      "expected_output": "Uses the shots-api skill, preserves error details, references the documented timeout and theme constraints, and recommends inspecting headers such as Content-Type and X-Screenshot-Status.",
+      "files": []
+    }
+  ]
+}
