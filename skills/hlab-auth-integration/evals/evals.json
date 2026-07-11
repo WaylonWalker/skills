@@ -1,0 +1,29 @@
+{
+  "skill_name": "hlab-auth-integration",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Protect my Grafana instance with hlab-auth. I already run Traefik in front of `grafana.home.arpa`. Add the right ForwardAuth shape, make sure spoofed auth headers cannot slip through, and tell me what scope I should wire up in hlab-auth.",
+      "expected_output": "Uses the hlab-auth integration skill, classifies this as a Tier 1 Traefik ForwardAuth integration, keeps the stable X-Hlab-* contract, strips spoofed inbound headers, and documents the required hlab-auth scope and verification steps.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I have an internal FastAPI dashboard behind Nginx. I want hlab-auth in front of it, and the app should auto-create a local profile from the trusted proxy identity. Please implement the right header handling and make sure direct requests without the proxy do not get treated as logged in.",
+      "expected_output": "Uses the hlab-auth integration skill, classifies the request as Tier 2 or Tier 3 depending on the repo shape, preserves the external-auth trust model, uses X-Hlab-User-Id as the durable linkage key, and fails closed when trusted headers or proxy provenance are missing.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Can you set up my app to use hlab-auth as an OIDC provider so users can click Sign in with hlab-auth from the app login page? If that is not possible yet, show me the supported way to protect the app in v1 and what tradeoffs I should expect.",
+      "expected_output": "Uses the hlab-auth integration skill, explicitly identifies OIDC provider expectations as out of scope for hlab-auth v1, redirects to the supported proxy-header integration model, and explains the compatibility and trust-boundary tradeoffs clearly.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "I want an agent to manage only the Grafana app in hlab-auth after I approve it. Teach me the safest way to create a token for that agent, what scopes it should get, whether I should use a personal token or app token, and how the agent should call hlab-auth after that.",
+      "expected_output": "Uses the hlab-auth integration skill, recommends the least-privilege credential path, distinguishes app-bound service tokens from narrow personal tokens, gives the minimal scope set, notes current CLI versus API capabilities, and shows a safe usage and revocation workflow.",
+      "files": []
+    }
+  ]
+}
